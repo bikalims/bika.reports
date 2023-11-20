@@ -25,9 +25,7 @@ lib64
 log.html
 output.xml
 pip-selfcheck.json
-report.html
 .vscode/
 .tox/
-reports/
 venv/
 # excludes
