@@ -3,7 +3,6 @@
 import logging
 
 from zope.i18nmessageid import MessageFactory
-from zope.i18nmessageid import MessageFactory
 from Products.Archetypes.atapi import listTypes
 from Products.Archetypes.atapi import process_types
 from Products.CMFCore.permissions import AddPortalContent
@@ -31,7 +30,7 @@ def initialize(context):
     allTypes = zip(content_types, constructors)
     for atype, constructor in allTypes:
         kind = "%s: Add %s" % (PROJECTNAME, atype.portal_type)
-        perm_name = "Add{}".format(atype.portal_type)
+        perm_name = "Add portal content"
         perm = getattr(permissions, perm_name, AddPortalContent)
         ContentInit(kind,
                     content_types=(atype,),
