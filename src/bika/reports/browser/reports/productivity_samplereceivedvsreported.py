@@ -18,14 +18,15 @@
 # Copyright 2018-2021 by it's authors.
 # Some rights reserved, see README and LICENSE.
 
-from bika.lims import api
-from bika.lims import bikaMessageFactory as _
-from bika.lims.browser import BrowserView
-from bika.lims.browser.reports.selection_macros import SelectionMacrosView
-from plone.app.layout.globals.interfaces import IViewView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
-from senaite.core.catalog import SAMPLE_CATALOG
+from plone.app.layout.globals.interfaces import IViewView
 from zope.interface import implements
+
+from bika.lims import api
+from bika.lims.browser import BrowserView
+from bika.reports import _
+from bika.reports.browser.reports.selection_macros import SelectionMacrosView
+from senaite.core.catalog import SAMPLE_CATALOG
 
 
 def percentage(part, whole):

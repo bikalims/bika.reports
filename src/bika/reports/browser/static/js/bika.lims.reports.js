@@ -3,7 +3,7 @@
     coffee --no-header -w -o ../ -c bika.lims.reports.coffee
  */
 
-(function() {
+(function() {"use strict";
   var bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   window.ReportFolderView = (function() {
@@ -48,3 +48,5 @@
   })();
 
 }).call(this);
+obj = new window["ReportFolderView"]();
+obj.load();

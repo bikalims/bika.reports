@@ -20,25 +20,26 @@
 
 import importlib
 import os
+
+from DateTime import DateTime
+from Products.CMFCore.utils import getToolByName
+from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from datetime import datetime
+from plone.app.layout.globals.interfaces import IViewView
+from zope.component import getAdapters
+from zope.interface import implements
 
 from bika.lims import api
-from bika.lims import bikaMessageFactory as _
 from bika.lims.browser import BrowserView
 from bika.lims.browser.bika_listing import BikaListingView
-from bika.reports.browser.reports.selection_macros import SelectionMacrosView
-from bika.reports.interfaces import IAdministrationReport
-from bika.reports.interfaces import IProductivityReport
 from bika.lims.utils import createPdf
 from bika.lims.utils import getUsers
 from bika.lims.utils import logged_in_client
-from DateTime import DateTime
-from plone.app.layout.globals.interfaces import IViewView
-from Products.CMFCore.utils import getToolByName
-from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from bika.reports import _
+from bika.reports.browser.reports.selection_macros import SelectionMacrosView
+from bika.reports.interfaces import IAdministrationReport
+from bika.reports.interfaces import IProductivityReport
 from senaite.core.catalog import REPORT_CATALOG
-from zope.component import getAdapters
-from zope.interface import implements
 
 
 class ProductivityView(BrowserView):
@@ -255,7 +256,7 @@ class SubmitForm(BrowserView):
         if "report_module" in self.request:
             module = self.request["report_module"]
         else:
-            module = "bika.lims.browser.reports.%s" % report_id
+            module = "bika.reports.browser.reports.%s" % report_id
         try:
             Report = getattr(importlib.import_module(module), "Report")
             # required during error redirect: the report must have a copy of

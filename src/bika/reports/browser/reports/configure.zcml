@@ -11,7 +11,7 @@
       name="productivity"
       class="bika.reports.browser.reports.ProductivityView"
       permission="zope2.View"
-        layer="bika.reports.interfaces.IBikaReportsLayer"
+      layer="bika.reports.interfaces.IBikaReportsLayer"
     />
 
     <browser:page

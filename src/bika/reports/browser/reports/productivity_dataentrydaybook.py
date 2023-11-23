@@ -18,16 +18,17 @@
 # Copyright 2018-2021 by it's authors.
 # Some rights reserved, see README and LICENSE.
 
-from bika.lims import bikaMessageFactory as _
-from bika.lims import logger
-from bika.lims.browser import BrowserView
-from bika.lims.browser.reports.selection_macros import SelectionMacrosView
-from bika.lims.workflow import getTransitionDate
-from plone.app.layout.globals.interfaces import IViewView
 from Products.CMFCore.utils import getToolByName
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from plone.app.layout.globals.interfaces import IViewView
 from senaite.core.catalog import SAMPLE_CATALOG
 from zope.interface import implements
+
+from bika.lims.browser import BrowserView
+from bika.lims.workflow import getTransitionDate
+from bika.reports import _
+from bika.reports import logger
+from bika.reports.browser.reports.selection_macros import SelectionMacrosView
 
 
 class Report(BrowserView):
