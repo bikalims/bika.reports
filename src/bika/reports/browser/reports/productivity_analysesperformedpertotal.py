@@ -25,7 +25,7 @@ from zope.interface import implements
 
 from bika.lims.browser import BrowserView
 from bika.reports import _
-from bika.reports.reports.reports.selection_macros import SelectionMacrosView
+from bika.reports.browser.reports.selection_macros import SelectionMacrosView
 
 
 class Report(BrowserView):
