@@ -19,20 +19,20 @@
 # Some rights reserved, see README and LICENSE.
 
 from AccessControl import ClassSecurityInfo
-from bika.lims.browser.fields import UIDReferenceField
-from senaite.core.browser.widgets.referencewidget import ReferenceWidget
-from bika.reports.config import PROJECTNAME
-from bika.lims.content.bikaschema import BikaSchema
-from bika.lims.content.clientawaremixin import ClientAwareMixin
-from bika.lims.utils import user_fullname
 from DateTime import DateTime
-from plone.app.blob.field import FileField as BlobFileField
 from Products.Archetypes import atapi
 from Products.Archetypes.BaseFolder import BaseFolder
 from Products.Archetypes.Field import StringField
 from Products.Archetypes.Schema import Schema
 from Products.Archetypes.Widget import FileWidget
 from Products.Archetypes.Widget import StringWidget
+from bika.lims import api
+from bika.lims.browser.fields import UIDReferenceField
+from bika.lims.content.bikaschema import BikaSchema
+from bika.lims.content.clientawaremixin import ClientAwareMixin
+from bika.reports.config import PROJECTNAME
+from senaite.core.browser.widgets.referencewidget import ReferenceWidget
+from plone.app.blob.field import FileField as BlobFileField
 
 schema = BikaSchema.copy() + Schema((
     BlobFileField(
@@ -67,6 +67,7 @@ class Report(BaseFolder, ClientAwareMixin):
     schema = schema
 
     _at_rename_after_creation = True
+
     def _renameAfterCreation(self, check_auto_id=False):
         from bika.lims.idserver import renameAfterCreation
         renameAfterCreation(self)
@@ -78,7 +79,7 @@ class Report(BaseFolder, ClientAwareMixin):
 
     @security.public
     def getCreatorFullName(self):
-        return user_fullname(self, self.Creator())
+        return api.get_user_fullname(self.Creator())
 
     @security.public
     def getFileSize(self):
@@ -86,5 +87,6 @@ class Report(BaseFolder, ClientAwareMixin):
         if file:
             return '%sKb' % (file.get_size() / 1024)
         return ''
+
 
 atapi.registerType(Report, PROJECTNAME)
