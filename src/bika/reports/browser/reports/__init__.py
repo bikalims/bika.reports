@@ -43,8 +43,8 @@ from senaite.core.catalog import REPORT_CATALOG
 
 
 class ProductivityView(BrowserView):
-    """ Productivity View form
-    """
+    """Productivity View form"""
+
     implements(IViewView)
     template = ViewPageTemplateFile("templates/productivity.pt")
 
@@ -56,22 +56,21 @@ class ProductivityView(BrowserView):
     def __call__(self):
         self.selection_macros = SelectionMacrosView(self.context, self.request)
         self.icon = self.portal_url + "/++resource++bika.lims.images/report_big.png"
-        self.getAnalysts = getUsers(self.context,
-                                    ['Manager', 'LabManager', 'Analyst'])
+        self.getAnalysts = getUsers(self.context, ["Manager", "LabManager", "Analyst"])
 
         self.additional_reports = []
-        adapters = getAdapters((self.context, ), IProductivityReport)
+        adapters = getAdapters((self.context,), IProductivityReport)
         for name, adapter in adapters:
             report_dict = adapter(self.context, self.request)
-            report_dict['id'] = name
+            report_dict["id"] = name
             self.additional_reports.append(report_dict)
 
         return self.template()
 
 
 class AdministrationView(BrowserView):
-    """ Administration View form
-    """
+    """Administration View form"""
+
     implements(IViewView)
     template = ViewPageTemplateFile("templates/administration.pt")
 
@@ -85,18 +84,18 @@ class AdministrationView(BrowserView):
         self.icon = self.portal_url + "/++resource++bika.lims.images/report_big.png"
 
         self.additional_reports = []
-        adapters = getAdapters((self.context, ), IAdministrationReport)
+        adapters = getAdapters((self.context,), IAdministrationReport)
         for name, adapter in adapters:
             report_dict = adapter(self.context, self.request)
-            report_dict['id'] = name
+            report_dict["id"] = name
             self.additional_reports.append(report_dict)
 
         return self.template()
 
 
 class ReportHistoryView(BikaListingView):
-    """ Report history form
-    """
+    """Report history form"""
+
     implements(IViewView)
 
     def __init__(self, context, request):
@@ -123,49 +122,52 @@ class ReportHistoryView(BikaListingView):
 
     def __call__(self):
         self.columns = {
-            'Title': {
-                'title': _('Title'),
-                'attr': 'Title',
-                'index': 'title', },
-            'file_size': {
-                'title': _("Size"),
-                'attr': 'getFileSize',
-                'sortable': False, },
-            'created': {
-                'title': _("Created"),
-                'attr': 'created',
-                'index': 'created', },
-            'creator': {
-                'title': _("By"),
-                'attr': 'getCreatorFullName',
-                'index': 'Creator', }, }
+            "Title": {
+                "title": _("Title"),
+                "attr": "Title",
+                "index": "title",
+            },
+            "file_size": {
+                "title": _("Size"),
+                "attr": "getFileSize",
+                "sortable": False,
+            },
+            "created": {
+                "title": _("Created"),
+                "attr": "created",
+                "index": "created",
+            },
+            "creator": {
+                "title": _("By"),
+                "attr": "getCreatorFullName",
+                "index": "Creator",
+            },
+        }
         self.review_states = [
-            {'id': 'default',
-             'title': 'All',
-             'contentFilter': {},
-             'columns': ['Title',
-                         'file_size',
-                         'created',
-                         'creator']},
+            {
+                "id": "default",
+                "title": "All",
+                "contentFilter": {},
+                "columns": ["Title", "file_size", "created", "creator"],
+            },
         ]
 
-        self.contentFilter = {
-            'portal_type': 'Report',
-            'sort_order': 'reverse'}
+        self.contentFilter = {"portal_type": "Report", "sort_order": "reverse"}
 
         this_client = logged_in_client(self.context)
         if this_client:
-            self.contentFilter['getClientUID'] = this_client.UID()
+            self.contentFilter["getClientUID"] = this_client.UID()
         else:
-            self.columns['client'] = {
-                'title': _('Client'),
-                'attr': 'getClientTitle',
-                'replace_url': 'getClientURL', }
+            self.columns["client"] = {
+                "title": _("Client"),
+                "attr": "getClientTitle",
+                "replace_url": "getClientURL",
+            }
 
         return super(ReportHistoryView, self).__call__()
 
     def lookupMime(self, name):
-        mimetool = getToolByName(self, 'mimetypes_registry')
+        mimetool = getToolByName(self, "mimetypes_registry")
         mimetypes = mimetool.lookup(name)
         if len(mimetypes):
             return mimetypes[0].name()
@@ -176,16 +178,17 @@ class ReportHistoryView(BikaListingView):
         item = BikaListingView.folderitem(self, obj, item, index)
         # https://github.com/collective/uwosh.pfg.d2c/issues/20
         # https://github.com/collective/uwosh.pfg.d2c/pull/21
-        item['replace']['Title'] = \
-             "<a href='%s/ReportFile'>%s</a>" % \
-             (item['url'], item['Title'])
-        item['replace']['created'] = self.ulocalized_time(item['created'])
+        item["replace"]["Title"] = "<a href='%s/ReportFile'>%s</a>" % (
+            item["url"],
+            item["Title"],
+        )
+        item["replace"]["created"] = self.ulocalized_time(item["created"])
         return item
 
 
 class SubmitForm(BrowserView):
-    """ Redirect to specific report
-    """
+    """Redirect to specific report"""
+
     implements(IViewView)
     frame_template = ViewPageTemplateFile("templates/report_frame.pt")
     # default and errors use this template:
@@ -197,23 +200,22 @@ class SubmitForm(BrowserView):
         self.request = request
 
     def __call__(self):
-        """Create and render selected report
-        """
+        """Create and render selected report"""
 
         # if there's an error, we return productivity.pt which requires these.
         self.selection_macros = SelectionMacrosView(self.context, self.request)
         self.additional_reports = []
-        adapters = getAdapters((self.context, ), IProductivityReport)
+        adapters = getAdapters((self.context,), IProductivityReport)
         for name, adapter in adapters:
             report_dict = adapter(self.context, self.request)
-            report_dict['id'] = name
+            report_dict["id"] = name
             self.additional_reports.append(report_dict)
 
-        report_id = self.request.get('report_id', '')
+        report_id = self.request.get("report_id", "")
         if not report_id:
             message = _("No report specified in request")
             self.logger.error(message)
-            self.context.plone_utils.addPortalMessage(message, 'error')
+            self.context.plone_utils.addPortalMessage(message, "error")
             return self.template()
 
         self.date = DateTime()
@@ -223,8 +225,11 @@ class SubmitForm(BrowserView):
 
         # signature image
         self.reporter_signature = ""
-        c = [x for x in self.senaite_catalog_setup(portal_type='LabContact')
-             if x.getObject().getUsername() == username]
+        c = [
+            x
+            for x in self.senaite_catalog_setup(portal_type="LabContact")
+            if x.getObject().getUsername() == username
+        ]
         if c:
             sf = c[0].getObject().getSignature()
             if sf:
@@ -251,7 +256,7 @@ class SubmitForm(BrowserView):
 
         # the report can add file names to this list; they will be deleted
         # once the PDF has been generated.  temporary plot image files, etc.
-        self.request['to_remove'] = []
+        self.request["to_remove"] = []
 
         if "report_module" in self.request:
             module = self.request["report_module"]
@@ -265,7 +270,7 @@ class SubmitForm(BrowserView):
         except (ImportError, AttributeError):
             message = "Report %s.Report not found (shouldn't happen)" % module
             self.logger.error(message)
-            self.context.plone_utils.addPortalMessage(message, 'error')
+            self.context.plone_utils.addPortalMessage(message, "error")
             return self.template()
 
         # Report must return dict with:
@@ -279,19 +284,19 @@ class SubmitForm(BrowserView):
 
         if type(output) in (str, unicode, bytes):
             # remove temporary files
-            for f in self.request['to_remove']:
+            for f in self.request["to_remove"]:
                 os.remove(f)
             return output
 
         # The report output gets pulled through report_frame.pt
-        self.reportout = output['report_data']
+        self.reportout = output["report_data"]
         framed_output = self.frame_template()
 
         # this is the good part
         pdf = createPdf(framed_output)
 
         # remove temporary files
-        for f in self.request['to_remove']:
+        for f in self.request["to_remove"]:
             os.remove(f)
 
         if not pdf:
@@ -307,7 +312,7 @@ class SubmitForm(BrowserView):
 
         setheader = self.request.response.setHeader
         setheader("Content-Type", "application/pdf")
-        setheader("Content-Disposition", "attachment; filename=\"%s\"" % fn)
+        setheader("Content-Disposition", 'attachment; filename="%s"' % fn)
         setheader("Content-Length", len(pdf))
         setheader("Cache-Control", "no-store")
         setheader("Pragma", "no-cache")
