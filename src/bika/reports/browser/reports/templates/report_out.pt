@@ -10,28 +10,28 @@
     <link rel="stylesheet" type="text/css" media="all" href=""
           tal:attributes="href string:$portal_url/reports.css" />
 
+    <script type="text/javascript"
+            tal:attributes="src string:${portal/absolute_url}/++plone++senaite.core.static/modules/d3/d3.min.js"/>
+    <script type="text/javascript"
+              tal:attributes="src string:${portal/absolute_url}/++plone++bika.reports/js/bika.lims.plotter.js"/>
+
+
   </head>
   <body
     tal:define="report_content view/report_content;
-                report_format python:report_content.has_key('formats')
-                and report_content['formats'] or [];
-                report_parms python:report_content.has_key('parms')
-                and report_content['parms'] or [];
-                report_headers python:report_content.has_key('headings')
-                and report_content['headings'] or {};
-                footlines python:report_content.has_key('footings')
-                and report_content['footings'] or [];
-                footnotes python:report_content.has_key('footnotes')
-                and report_content['footnotes'] or [];
-                datalines python:report_content.has_key('datalines')
-                and report_content['datalines'] or [];
+                report_format python:report_content.get('formats', []);
+                report_parms python:report_content.get('parms', []);
+                report_headers python:report_content.get('headings', []);
+                footlines python:report_content.get('footings', []);
+                footnotes python:report_content.get('footnotes', []);
+                datalines python:report_content.get('datalines', []);
                 ">
 
-    <h1 tal:condition="python:report_headers.has_key('header')">
+    <h1 tal:condition="python:report_headers.get('header')">
       <span tal:content="python:report_headers['header']"/>
     </h1>
 
-    <!-- <h2 tal:condition="python:report_headers.has_key('subheader')">
+    <!-- <h2 tal:condition="python:report_headers.get('subheader')">
          <span tal:content="python:report_headers['subheader']"/>
          </h2>
     -->
@@ -73,14 +73,10 @@
                 tal:repeat="i python:range(len(line))">
                 <td class="" colspan=""
                     tal:define="
-                           img_before python:line[i].has_key('img_before')
-                           and line[i]['img_before'] or None;
-                           img_after python:line[i].has_key('img_after')
-                           and line[i]['img_after'] or None;
-                           colspan python:line[i].has_key('colspan')
-                           and line[i]['colspan'] or 1;
-                           class python:line[i].has_key('class')
-                           and line[i]['class'] or None;
+                           img_before python:line[i].get('img_before');
+                           img_after python:line[i].get('img_after');
+                           colspan python:line[i].get('colspan', 1);
+                           class python:line[i].get('class');
                            "
                     tal:attributes="
                            class class;
@@ -111,10 +107,8 @@
                 tal:repeat="i python:range(len(line))">
                 <td class="" colspan=""
                     tal:define="
-                           colspan python:line[i].has_key('colspan')
-                           and line[i]['colspan'] or 1;
-                           class python:line[i].has_key('class')
-                           and line[i]['class'] or None;"
+                           colspan python:line[i].get('colspan', 1);
+                           class python:line[i].get('class');"
                     tal:attributes="
                            class class;
                            colspan colspan">
@@ -132,14 +126,10 @@
         tal:repeat="i python:range(len(note))">
         <p class="discreet"
            tal:define="
-                  img_before python:note[i].has_key('img_before')
-                  and note[i]['img_before'] or None;
-                  img_after python:note[i].has_key('img_after')
-                  and note[i]['img_after'] or None;
-                  colspan python:note[i].has_key('colspan')
-                  and note[i]['colspan'] or 1;
-                  class python:note[i].has_key('class')
-                  and note[i]['class'] or None;
+                  img_before python:note[i].get('img_before');
+                  img_after python:note[i].get('img_after');
+                  colspan python:note[i].get('colspan', 1);
+                  class python:note[i].get('class');
                   "
            tal:attributes="class class">
           <tal:img tal:condition="img_before">
@@ -156,6 +146,93 @@
         </p>
       </tal:note>
     </tal:notes>
-  </body>
+    <tal:plot tal:condition="python: hasattr(view, 'plot_enabled') and view.plot_enabled or False">
+      <div class="bika-report-plot" tal:attributes="data-report-content view/plot_data"/>
+    </tal:plot>
 
+  <script>
+    function isValidCharacter(char) {
+        const charCode = char.charCodeAt(0);
+        return charCode >= 0 && charCode <= 255; // Valid ASCII range
+    }
+
+    function sanitizeInput(word) {
+        let sanitizedString = '';
+        for (let i = 0; i < word.length; i++) {
+            if (isValidCharacter(word[i])) {
+                sanitizedString += word[i]; // Keep valid characters
+            } else if (word[i].charCodeAt(0) == 8722) {
+                sanitizedString += "-"
+            } else {
+                // Invalid characters are skipped (not added to sanitizedString)
+                console.error('Invalid char: ' + word[i] + ' = ' + word[i].charCodeAt(0));
+            };
+        }
+        return sanitizedString;
+    }
+
+    function safeBtoa(word) {
+      try {
+        const sanitizedInput = sanitizeInput(word);
+        return btoa(sanitizedInput); // Now it's safe to use btoa
+      } catch (error) {
+        console.error('Failed to sanitize  object:', error);
+        throw error;
+      }
+    }
+
+    function insertSVGAsObject(svgElement, targetContainer) {
+      try {
+        // Serialize the SVG to a string
+        const svgData = new XMLSerializer().serializeToString(svgElement);
+        
+        // Ensure proper SVG data URL encoding (no need for base64 if using raw SVG)
+        // b64 = btoa(unescape(encodeURIComponent(svgData)));
+        b64 = safeBtoa(svgData);
+        const svgDataUrl = 'data:image/svg+xml;base64,' + b64;
+        
+        // Create an object element with the data URL
+        const objectElement = document.createElement('object');
+        objectElement.setAttribute('type', 'image/svg+xml');
+        objectElement.setAttribute('data', svgDataUrl);
+
+        // Append object to the target container
+        targetContainer.innerHTML = '';  // Clear existing content
+        targetContainer.appendChild(objectElement);
+        
+        return objectElement;
+
+      } catch (error) {
+        console.error('Failed to insert SVG as object:', error);
+        throw error;
+      }
+    }
+
+    function renderPlot(el) {
+      console.log('renderPlot ...')
+      try {
+        const config = JSON.parse(el.getAttribute('data-report-content'));
+        const bikaPlot = new BikaPlot(config);
+
+        const container = d3.select(el);
+        container.selectAll("svg").remove();  // Clear existing SVGs
+        container.selectAll("img").remove();  // Clear existing SVGs
+
+        bikaPlot.build_plot(el);
+
+        const svg = container.selectAll("svg")
+        insertSVGAsObject(svg.node(), container.node())
+
+      } catch (e) {
+        console.error("renderPlot failed:", e);
+      }
+    };
+
+    document.querySelectorAll('.bika-report-plot').forEach(el => {
+      renderPlot(el);
+    });
+  </script>
+
+
+  </body>
 </html>

@@ -20,6 +20,7 @@
 
 import csv
 import datetime
+import json
 
 from six import StringIO
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
@@ -28,8 +29,9 @@ from bika.lims import bikaMessageFactory as _
 from bika.lims.browser import BrowserView
 from bika.lims.catalog.analysis_catalog import CATALOG_ANALYSIS_LISTING
 from bika.lims.utils import formatDateQuery, formatDateParms
-from bika.lims.utils import t
+from bika.reports.browser.reports.plotter import createPlot
 from plone.app.layout.globals.interfaces import IViewView
+from senaite.core.i18n import translate as t
 from zope.interface import implements
 
 
@@ -49,6 +51,7 @@ class Report(BrowserView):
             "col_heads": [_("Date"), _("Turnaround time (h)")],
             "class": "",
         }
+        self.plot_enabled = False
 
     def __call__(self):
         parms = []
@@ -87,9 +90,14 @@ class Report(BrowserView):
                     # Calculate averages
                     data_lines.append(
                         [
-                            {"value": prev_date_key, "class": ""},
+                            {
+                                "value": prev_date_key,
+                                "plot": analysis.getDateReceived().day(),
+                                "class": "date",
+                            },
                             {
                                 "value": api.to_dhm_format(minutes=(duration // count)),
+                                "plot": duration // count,
                                 "class": "number",
                             },
                         ]
@@ -108,9 +116,14 @@ class Report(BrowserView):
             # Calculate averages
             data_lines.append(
                 [
-                    {"value": prev_date_key, "class": ""},
+                    {
+                        "value": prev_date_key,
+                        "plot": analysis.getDateReceived().day(),
+                        "class": "date",
+                    },
                     {
                         "value": api.to_dhm_format(minutes=(duration // count)),
+                        "plot": duration // count,
                         "class": "number",
                     },
                 ]
@@ -139,6 +152,17 @@ class Report(BrowserView):
                 ],
             ],
         }
+        if self.plot_enabled:
+            # Set up plot data
+            plot_data = self.report_content.copy()
+            plot_data["datalines"] = [
+                plot_data["datalines"],
+            ]
+            self.plot_data = json.dumps(plot_data)
+
+        # test_template = self.template()
+        # print(test_template)
+        # import pdb; pdb.set_trace()  # fmt: skip
         return {
             "report_title": t(self.headings["header"]),
             "report_data": self.template(),

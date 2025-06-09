@@ -83,7 +83,6 @@
       <script type="text/javascript"
               src="bika.lims.reports.js"
               tal:attributes="src string:${portal/absolute_url}/++plone++bika.reports/js/bika.lims.reports.js"></script>
-
     </metal:block>
   </head>
 

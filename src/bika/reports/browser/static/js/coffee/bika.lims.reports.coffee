@@ -34,3 +34,6 @@ class window.ReportFolderView
     $(".criteria").toggle false
     div_id = event.currentTarget.id.split("_selector")[0]
     $("[id='"+div_id+"']").toggle true
+
+obj = new window["ReportFolderView"]()
+obj.load()

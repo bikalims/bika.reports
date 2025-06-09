@@ -292,7 +292,9 @@ class SubmitForm(BrowserView):
         self.reportout = output["report_data"]
         framed_output = self.frame_template()
 
-        # this is the good part
+        if False:
+            return framed_output  # HACK - skip PDF
+
         pdf = createPdf(framed_output)
 
         # remove temporary files
@@ -316,4 +318,5 @@ class SubmitForm(BrowserView):
         setheader("Content-Length", len(pdf))
         setheader("Cache-Control", "no-store")
         setheader("Pragma", "no-cache")
+        self.logger.info("Add PDF to response")
         self.request.response.write(pdf)
