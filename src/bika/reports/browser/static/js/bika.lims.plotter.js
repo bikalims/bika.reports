@@ -189,31 +189,25 @@
           // curve_val = d3[interp]
           data.forEach(function(row, idx, full) {
             var lineGen;
-            console.info("Main loop: row: " + row.length);
+            console.info("Main loop: row: " + row.length + ' idx: ' + idx);
             row.forEach(function(item) {
               return console.info("Main loop: item: x=" + item['x'] + " y=" + item['y']);
             });
             // Line generator
             lineGen = d3.line().x(function(d) {
-              return xScale(d['x']);
+              return xScale(idx);
             }).y(function(d) {
               return yScale(d['y']);
             });
             // .attr("stroke-dasharray", line_configs[idx].dash)
             svg.append("path").datum(row).attr("fill", "none").attr("stroke-width", 2).attr("stroke", 'red').attr("d", lineGen);
-            // Add data points with different symbols
-            return svg.selectAll(`.symbol-${            // .attr("class", "symbol symbol-#{idx}")
-idx}`).data(row).enter().append("path").attr("d", d3.symbolSquare).attr("transform", function(d) { // Use filtered data
+            // Add data points with symbols
+            return svg.selectAll(`.symbol-${idx}`).datum(row).enter().append("path").attr("class", `symbol symbol-${idx}`).attr("d", d3.symbolSquare).style("fill", "black").attr("transform", function(d) {
               var xVal, yVal;
-              // Ensure valid x and y before applying transform
               xVal = d['x'];
               yVal = d['y'];
-              if (!isNaN(xVal) && !isNaN(yVal)) {
-                return `translate(${xScale(xVal)}, ${yScale(yVal)})`;
-              } else {
-                return null; // Skip invalid points
-              }
-            }).style("fill", "black");
+              return `translate(${xScale(xVal)}, ${yScale(yVal)})`;
+            });
           });
           // Add legend
           legend = svg.append("g").attr("class", "legend").attr("transform", `translate(50, ${height + 50})`);

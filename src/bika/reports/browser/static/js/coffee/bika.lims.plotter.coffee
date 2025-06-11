@@ -221,7 +221,7 @@ class BikaPlot
       # curve_val = d3[interp]
 
       data.forEach((row, idx, full) ->
-        console.info "Main loop: row: " + row.length
+        console.info "Main loop: row: " + row.length + ' idx: ' + idx
 
         row.forEach((item) ->
           console.info "Main loop: item: x=" + item['x'] + " y=" + item['y']
@@ -230,7 +230,7 @@ class BikaPlot
         # Line generator
         lineGen = d3.line()
           .x((d) ->
-            xScale(d['x'])
+            xScale(idx)
           )
           .y((d) ->
             yScale(d['y'])
@@ -244,22 +244,18 @@ class BikaPlot
           # .attr("stroke-dasharray", line_configs[idx].dash)
           .attr("d", lineGen)
 
-        # Add data points with different symbols
+        # Add data points with symbols
         svg.selectAll(".symbol-#{idx}")
-          .data(row) # Use filtered data
+          .datum(row)
           .enter().append("path")
-          # .attr("class", "symbol symbol-#{idx}")
+          .attr("class", "symbol symbol-#{idx}")
           .attr("d", d3.symbolSquare)
+          .style("fill", "black")
           .attr("transform", (d) ->
-            # Ensure valid x and y before applying transform
             xVal = d['x']
             yVal = d['y']
-            if not isNaN(xVal) and not isNaN(yVal)
-              "translate(#{xScale(xVal)}, #{yScale(yVal)})"
-            else
-              null # Skip invalid points
+            "translate(#{xScale(xVal)}, #{yScale(yVal)})"
           )
-          .style("fill", "black")
       )
 
       # Add legend
