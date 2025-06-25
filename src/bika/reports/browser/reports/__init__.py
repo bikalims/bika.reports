@@ -292,7 +292,7 @@ class SubmitForm(BrowserView):
         self.reportout = output["report_data"]
         framed_output = self.frame_template()
 
-        if False:
+        if True:
             return framed_output  # HACK - skip PDF
 
         pdf = createPdf(framed_output)

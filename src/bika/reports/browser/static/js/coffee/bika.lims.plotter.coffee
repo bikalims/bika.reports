@@ -1,299 +1,273 @@
+class D3LinePlotter
+  constructor: (@container, @options = {}) ->
+    @width = @options.width || 800
+    @height = @options.height || 400
+    @margin = @options.margin || { top: 20, right: 20, bottom: 80, left: 50 }
+    @innerWidth = @width - @margin.left - @margin.right
+    @innerHeight = @height - @margin.top - @margin.bottom
+    
+    # Initialize SVG
+    @svg = d3.select(@container)
+      .append('svg')
+      .attr('width', @width)
+      .attr('height', @height)
+    
+    @g = @svg.append('g')
+      .attr('transform', "translate(#{@margin.left},#{@margin.top})")
+    
+    # Initialize scales
+    @xScale = d3.scaleTime().range([0, @innerWidth])
+    @yScale = d3.scaleLinear().range([@innerHeight, 0])
+    
+    # Initialize line generator
+    @line = d3.line()
+      .x((d) => @xScale(d.x))
+      .y((d) => @yScale(d.y))
+      .curve(d3.curveMonotoneX)
 
-class BikaPlot 
+  parseData: (rawData) ->
+    parsedData = {
+      lines: []
+      hlines: []
+    }
+    
+    for series in rawData
+      if series.plot_type is 'line'
+        lineData = {
+          color: series.plot_color
+          showPoints: series.show_points
+          points: []
+        }
+        
+        for point in series.plot_points
+          lineData.points.push({
+            x: new Date(point.x.value)
+            y: parseFloat(point.y.value)
+          })
+        
+        parsedData.lines.push(lineData)
+      
+      else if series.plot_type is 'hline'
+        hlineData = {
+          color: series.plot_color
+          y: parseFloat(series.plot_points[0].y.value)
+        }
+        
+        parsedData.hlines.push(hlineData)
+    
+    return parsedData
 
-  ###*
-   * Plot an chart in Bika.Reports
-   *
-  ###
-  constructor: (config) ->
-    @props = config
-    # console.log('constructor complete')
+  updateScales: (data) ->
+    # Get all x values from line data
+    allXValues = []
+    allYValues = []
+    
+    for line in data.lines
+      for point in line.points
+        allXValues.push(point.x)
+        allYValues.push(point.y)
+    
+    # Add horizontal line y values
+    for hline in data.hlines
+      allYValues.push(hline.y)
+    
+    @xScale.domain(d3.extent(allXValues))
+    
+    # Add padding to Y domain for better spacing
+    yExtent = d3.extent(allYValues)
+    yRange = yExtent[1] - yExtent[0]
+    yPadding = yRange * 0.1  # 10% padding on top and bottom
+    
+    @yScale.domain([yExtent[0] - yPadding, yExtent[1] + yPadding])
 
-  ###
-   * Calculate Y range
-  ###
-  get_Y_range: (minY, maxY) ->
-    diffY = maxY - minY
-    interval = 0
-    if diffY > 70
-      interval = 10
-    else if diffY > 50
-      interval = 5
-    else if diffY > 20
-      interval = 2
-    else if diffY > 10
-      interval = 1
-
-    if interval > 0
-      minTicks = minY - (minY % interval) + interval
-      maxTicks = maxY + (maxY % interval) + interval
-      y_range = d3.range(minTicks, maxTicks, interval)
+  drawAxes: ->
+    # X Axis with better date/time formatting
+    timeRange = @xScale.domain()
+    timeDiff = timeRange[1] - timeRange[0]
+    
+    # Choose appropriate format based on time span
+    if timeDiff < 24 * 60 * 60 * 1000  # Less than 24 hours
+      tickFormat = d3.timeFormat('%m/%d %H:%M')
+      tickCount = Math.min(8, Math.max(3, Math.floor(@innerWidth / 100)))
+    else if timeDiff < 7 * 24 * 60 * 60 * 1000  # Less than 7 days
+      tickFormat = d3.timeFormat('%m/%d %H:%M')
+      tickCount = Math.min(10, Math.max(4, Math.floor(@innerWidth / 80)))
     else
-      y_range = d3.range(minY, maxY)
+      tickFormat = d3.timeFormat('%Y-%m-%d')
+      tickCount = Math.min(8, Math.max(3, Math.floor(@innerWidth / 120)))
+    
+    @g.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', "translate(0,#{@innerHeight})")
+      .call(d3.axisBottom(@xScale)
+        .tickFormat(tickFormat)
+        .ticks(tickCount))
+    
+    # Rotate x-axis labels for better readability
+    @g.selectAll('.x-axis text')
+      .style('text-anchor', 'end')
+      .attr('dx', '-.8em')
+      .attr('dy', '.15em')
+      .attr('transform', 'rotate(-45)')
+    
+    # Y Axis
+    @g.append('g')
+      .attr('class', 'y-axis')
+      .call(d3.axisLeft(@yScale))
+    
+    # Add axis labels
+    @g.append('text')
+      .attr('class', 'axis-label')
+      .attr('transform', 'rotate(-90)')
+      .attr('y', 0 - @margin.left)
+      .attr('x', 0 - (@innerHeight / 2))
+      .attr('dy', '1em')
+      .style('text-anchor', 'middle')
+      .text('Value')
+    
+    @g.append('text')
+      .attr('class', 'axis-label')
+      .attr('transform', "translate(#{@innerWidth / 2}, #{@innerHeight + @margin.bottom})")
+      .style('text-anchor', 'middle')
+      .text('Time')
 
-    # console.log "Y Axis: min: ", minY, " max: ", maxY, " diffY: ", diffY, " interval: ", interval
-    y_range
+  drawHorizontalLines: (hlines) ->
+    @g.selectAll('.hline')
+      .data(hlines)
+      .enter()
+      .append('line')
+      .attr('class', 'hline')
+      .attr('x1', 0)
+      .attr('x2', @innerWidth)
+      .attr('y1', (d) => @yScale(d.y))
+      .attr('y2', (d) => @yScale(d.y))
+      .attr('stroke', (d) -> d.color)
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', '5,5')
+      .attr('opacity', 0.7)
 
-  ###
-   * Converts the string value to an array
-  ###
-  to_matrix: (data) ->
+  drawLines: (lines) ->
+    # Draw line paths
+    @g.selectAll('.line-path')
+      .data(lines)
+      .enter()
+      .append('path')
+      .attr('class', 'line-path')
+      .attr('d', (d) => @line(d.points))
+      .attr('fill', 'none')
+      .attr('stroke', (d) -> d.color)
+      .attr('stroke-width', 2)
+    
+    # Draw points if requested
+    for lineData, i in lines
+      if lineData.showPoints
+        @g.selectAll(".point-#{i}")
+          .data(lineData.points)
+          .enter()
+          .append('circle')
+          .attr('class', "point-#{i}")
+          .attr('cx', (d) => @xScale(d.x))
+          .attr('cy', (d) => @yScale(d.y))
+          .attr('r', 4)
+          .attr('fill', lineData.color)
+          .attr('stroke', 'white')
+          .attr('stroke-width', 2)
 
-    # Map each inner list to an object
-    matrix = data.map (sublist) ->
-      row = sublist.map (item, idx) ->
-        if 'plot' of item[0]
-          item['x'] = item[0]['plot']
-
-        if 'plot' of item[1]
-          item['y'] = item[1]['plot'] % 100
-        item
-      row
-
-
-    # # Format values
-    # matrix.map (row) ->
-    #     console.log(row)
-    #     headers.forEach (header, index) ->
-    #       if index = 0
-    #         row[header] = row[header]
-    #       else
-    #         row[header] = parseFloat(row[header])
-
-    matrix
-
-
-  getLineConfigs = (count) ->
-    configs = [
-      {symbol: d3.symbolStar, dash: ""}
-      {symbol: d3.symbolSquare, dash: ""}
-      {symbol: d3.symbolTriangle, dash: ""}
-      {symbol: d3.symbolDiamond, dash: ""}
-      {symbol: d3.symbolCross, dash: ""}
-    ]
-    configs.slice(0, count)
-
-  # Create symbol generator
-  symbolGenerator = d3.symbol().size(48)  # Adjust size as needed
-
-  ###
-   * Inputs table builder. Generates a table of  inputs as matrix
-  ###
-  build_plot: (container)->
-    console.log "BikaPlot::build_plot: entered with ", container
-    try
-      console.log("Data being used for rendering:", this.props.datalines)  # Log the data
-
-      if this.props.datalines == ""
-        console.log "BikaPlot::build_plot: exit because no datalines"
-        container.current.appendChild([])
-        return
-
-      # Get datasets
-      # headers = this.props.formats.col_heads
-      # col_types = columns.map (i) -> i.ColumnType
-      # col_colors = columns.map (i) -> i.ColumnColor
-      data = @to_matrix(this.props.datalines)
-
-      # line_configs = getLineConfigs(headers.length - 1)
-
-      # Set up dimensions
-      margin = {top: 40, right: 80, bottom: 50, left: 60}
-      width = 700 - margin.left - margin.right
-      height = 400 - margin.top - margin.bottom + 50
-
-      # Set up Y scale
-      minX = d3.min(data.flatMap((row) -> row.map((item) -> item['x'])))
-      maxX = d3.max(data.flatMap((row) -> row.map((item) -> item['x'])))
-      xScale = d3.scaleLinear()
-        .domain([Math.floor(minX), Math.ceil(maxX)])  # Trim domain to just cover data range
-        .range([0, width])
-
-      # Set up Y scale with trimmed domain
-      absoluteMinY = d3.min(data.flatMap((row) -> row.map((item) -> item['y'])))
-      minY_factor = 0.05; # 20%
-      minY = absoluteMinY - absoluteMinY * minY_factor;
-      console.info 'minY: ' + minY
-
-      maxY = d3.max(data.flatMap((row) -> row.map((item) -> item['y'])))
-      console.info 'maxY: ' + maxY
-
-      yScale = d3.scaleLinear()
-        .domain([Math.floor(minY), Math.ceil(maxY)])  # Trim domain to just cover data range
-        .range([height, 0])
-
-      # Create SVG container
-      svg = d3.select(container)
-        .append('svg')
-        .attr("id", "bika-plot-svg")  # Add unique ID
-        .style("height", "#{height+140}px")
-
-      # Remove any previous SVG content
-      svg.selectAll('*').remove()
-
-      svg = svg
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .attr('xmlns', 'http://www.w3.org/2000/svg')
-        .append("g")
-        .attr("transform", "translate(#{margin.left},#{margin.top})")
-
-      # Graph title
-      svg.append("text")
-        .attr("x", width / 2)
-        .attr("y", -margin.top / 2)
-        .attr("text-anchor", "middle")
-        .style("font-size", "16px")
-        .style("font-weight", "bold")
-        .text(this.props.headings.header)
-
-      # # Graph sub title
-      # svg.append("text")
-      #   .attr("x", width / 2)
-      #   .attr("y", -margin.top / 2)
-      #   .attr("text-anchor", "middle")
-      #   .style("font-size", "10px")
-      #   .style("font-weight", "bold")
-      #   .text(this.props.headings.subheader)
-
-      # X-axis
-      svg.append("g")
-        .attr("transform", "translate(0,#{height})")
-        .call(d3.axisBottom(xScale))
-
-      # # X-axis label
-      # svg.append("text")
-      #   .attr("x", width / 2)
-      #   .attr("y", height + margin.bottom - 10)
-      #   .attr("text-anchor", "middle")
-      #   .style("font-size", "12px")
-      #   .text(this.props.item.time_series_graph_xaxis)
-
-      # Y-axis
-      y_range = @get_Y_range(minY, maxY)
-      console.info 'Y Range: ' + y_range
-      yAxis = d3.axisLeft(yScale)
-        .tickValues(y_range)
-        .tickSize(-width)  # Extend ticks across the chart width
-
-      # # Y-axis label
-      # svg.append("text")
-      #   .attr("transform", "rotate(-90)")
-      #   .attr("x", -height / 2)
-      #   .attr("y", -margin.left + 15)
-      #   .attr("text-anchor", "middle")
-      #   .style("font-size", "12px")
-      #   .text(this.props.item.time_series_graph_yaxis)
-
-      # Add horizontal grid lines
-      svg.append("g")
-          .attr("class", "grid horizontal")
-          .attr("transform", "translate(0, 0)")
-          .call(yAxis)
-          .selectAll("line")
-          .style("stroke", "#999")  # Lighter gray
-          .style("opacity", 0.4)       # Adjust transparency
-
-
-      xAxis = d3.axisBottom(xScale)
-          .tickSize(-height)  # Extend ticks across the chart height
-          .tickFormat("")     # Remove tick labels
-          .tickValues([10, 20, 30, 40, 50])
-
-      # Add vertical grid lines
-      svg.append("g")
-        .attr("class", "grid vertical")
-        .attr("transform", "translate(0, #{height})")
-        .call(xAxis)
-        .selectAll("line")
-        .style("stroke", "#999")  # Lighter gray
-        .style("stroke-dasharray", "2,2")
-        .style("opacity", 0.8)       # Adjust transparency
-
-      # Draw axes
-      svg.append("g")
-        .attr("transform", "translate(0,#{height})")
-        .call(d3.axisBottom(xScale))
-
-      # # Get interpolation
-      # interp = this.props.item.time_series_graph_interpolation
-      # console.info interp 
-      # curve_val = d3[interp]
-
-      data.forEach((row, idx, full) ->
-        console.info "Main loop: row: " + row.length + ' idx: ' + idx
-
-        row.forEach((item) ->
-          console.info "Main loop: item: x=" + item['x'] + " y=" + item['y']
-        )
-
-        # Line generator
-        lineGen = d3.line()
-          .x((d) ->
-            xScale(idx)
-          )
-          .y((d) ->
-            yScale(d['y'])
-          )
-
-        svg.append("path")
-          .datum(row)
-          .attr("fill", "none")
-          .attr("stroke-width", 2)
-          .attr("stroke", 'red')
-          # .attr("stroke-dasharray", line_configs[idx].dash)
-          .attr("d", lineGen)
-
-        # Add data points with symbols
-        svg.selectAll(".symbol-#{idx}")
-          .datum(row)
-          .enter().append("path")
-          .attr("class", "symbol symbol-#{idx}")
-          .attr("d", d3.symbolSquare)
-          .style("fill", "black")
-          .attr("transform", (d) ->
-            xVal = d['x']
-            yVal = d['y']
-            "translate(#{xScale(xVal)}, #{yScale(yVal)})"
-          )
+  addTooltip: ->
+    tooltip = d3.select('body').append('div')
+      .attr('class', 'tooltip')
+      .style('position', 'absolute')
+      .style('padding', '10px')
+      .style('background', 'rgba(0, 0, 0, 0.8)')
+      .style('color', 'white')
+      .style('border-radius', '5px')
+      .style('pointer-events', 'none')
+      .style('opacity', 0)
+    
+    @g.selectAll('circle')
+      .on('mouseover', (event, d) ->
+        tooltip.transition()
+          .duration(200)
+          .style('opacity', 0.9)
+        tooltip.html("Time: #{d3.timeFormat('%Y-%m-%d %H:%M')(d.x)}<br/>Value: #{d.y.toFixed(2)}")
+          .style('left', (event.pageX + 10) + 'px')
+          .style('top', (event.pageY - 28) + 'px')
+      )
+      .on('mouseout', ->
+        tooltip.transition()
+          .duration(500)
+          .style('opacity', 0)
       )
 
-      # Add legend
-      legend = svg.append("g")
-        .attr("class", "legend")
-        .attr("transform", "translate(50, #{height + 50})")  # Move legend below the graph
+  # Method to get the SVG as a string for PDF generation
+  getSVGString: ->
+    # Clone the SVG node to avoid modifying the original
+    svgNode = @svg.node().cloneNode(true)
+    
+    # Add necessary styles inline for PDF rendering
+    svgString = new XMLSerializer().serializeToString(svgNode)
+    
+    # Add CSS styles that WeasyPrint can understand
+    styledSVG = """
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="#{@width}" height="#{@height}">
+      <defs>
+        <style type="text/css"><![CDATA[
+          .axis-label { font-size: 12px; font-family: Arial, sans-serif; }
+          .x-axis text, .y-axis text { font-size: 11px; font-family: Arial, sans-serif; }
+          .x-axis path, .y-axis path, .x-axis line, .y-axis line { 
+            fill: none; stroke: #000; shape-rendering: crispEdges; 
+          }
+          .hline { opacity: 0.7; }
+          .line-path { fill: none; stroke-width: 2px; }
+          text { fill: #000; }
+        ]]></style>
+      </defs>
+      #{svgNode.innerHTML}
+    </svg>
+    """
+    
+    return styledSVG
+  
+  # Method to render chart and return SVG for PDF
+  renderForPDF: (rawData) ->
+    @plot(rawData)
+    return @getSVGString()
 
-      # # Add legend items
-      # legendItems = legend.selectAll("g")
-      #   .data(headers.slice(1))
-      #   .enter().append("g")
-      #   .attr("transform", (d, i) ->
-      #     xOffset = parseFloat((i % Math.floor(width / 100)) * 100)  # Horizontal spacing
-      #     yOffset = parseFloat(Math.floor(i / Math.floor(width / 100)) * 20)  # Vertical spacing
-      #     "translate(#{xOffset}, #{yOffset})"
-      #   )
+  plot: (rawData) ->
+    # Clear previous plot
+    @g.selectAll('*').remove()
+    
+    # Parse and prepare data
+    data = @parseData(rawData)
+    
+    # Update scales
+    @updateScales(data)
+    
+    # Draw components
+    @drawAxes()
+    @drawHorizontalLines(data.hlines)
+    @drawLines(data.lines)
+    
+    # Only add tooltips if not generating for PDF
+    unless @options.forPDF
+      @addTooltip()
+    
+    # Add basic styling
+    @svg.selectAll('.axis-label')
+      .style('font-size', '12px')
+      .style('font-family', 'Arial, sans-serif')
+    
+    @svg.selectAll('.x-axis, .y-axis')
+      .style('font-size', '11px')
+      .style('font-family', 'Arial, sans-serif')
 
-      # # Add legend color symbols
-      # legendItems.append("path")
-      #   .attr("d", (d, i) ->
-      #     d3.symbol()
-      #       # .type(line_configs[i].symbol)
-      #       .size(100)()
-      #   )
-      #   .attr("transform", "translate(9, 9)")  # Center the symbol within the legend item
-      #   # .style("fill", (d, i) -> col_colors[i+1])
+# Usage example:
+# container = '#chart-container'  # CSS selector for container element
+# plotter = new D3LinePlotter(container, { width: 900, height: 500 })
+# plotter.plot(yourDataArray)
 
-      # # Add legend text
-      # legendItems.append("text")
-      #   .attr("x", 24)
-      #   .attr("y", 9)
-      #   .attr("dy", "0.35em")
-      #   .style("font-size", "12px")
-      #   .text((d) -> d)
-
-      console.log "BikaPlot::build_plot: ended"
-
-    catch error
-      console.error("Error in build_plot:", error)
-
-window.BikaPlot = BikaPlot
+# Export for use in other modules
+if typeof module isnt 'undefined' and module.exports
+  module.exports = D3LinePlotter
+else if typeof window isnt 'undefined'
+  window.D3LinePlotter = D3LinePlotter

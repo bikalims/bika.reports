@@ -59,9 +59,17 @@ class Report(BrowserView):
         query = dict(
             portal_type="Analysis", sort_on="getDateReceived", sort_order="ascending"
         )
+        # # HACK testing
+        # analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
+        # logger.info("Select analysis-results found {} results".format(len(analyses)))
+        # for analysis in analyses:
+        #     logger.info("Select analysis-results {} ".format(analysis.getServiceUID))
 
         # Filter by Service UID
         self.add_filter_by_service(query=query, out_params=parms)
+
+        # Filter by Specification UID
+        self.add_filter_by_specification(query=query, out_params=parms)
 
         # Filter by Analyst
         self.add_filter_by_analyst(query=query, out_params=parms)
@@ -75,25 +83,26 @@ class Report(BrowserView):
         logger.info("Select analysis-results query: {}".format(query))
         analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
         logger.info("Select analysis-results found {} results".format(len(analyses)))
+        plot_points = []
         for analysis in analyses:
             analysis = api.get_object(analysis)
             if not analysis.getResult():
                 continue
-            data_lines.append(
-                [
-                    {
-                        "value": str(analysis.getDateReceived()),
-                        # "plot": analysis.getDateReceived().timeTime(),
-                        "plot": str(analysis.getDateReceived()),
-                        "class": "date",
-                    },
-                    {
-                        "value": analysis.getResult(),
-                        "plot": analysis.getResult(),
-                        "class": "float",
-                    },
-                ]
-            )
+            # HACK
+            # TODO - using Sample date for testing - change to getDateReceived
+            data_point = [
+                {
+                    # "value": str(analysis.getDateReceived())[:16],
+                    "value": str(analysis.getDateSampled())[:16],
+                    "class": "date",
+                },
+                {
+                    "value": analysis.getResult(),
+                    "class": "float",
+                },
+            ]
+            data_lines.append(data_point)
+            plot_points.append({"x": data_point[0], "y": data_point[1]})
             total_count += 1
 
         if self.request.get("output_format", "") == "CSV":
@@ -108,12 +117,69 @@ class Report(BrowserView):
         }
         if self.plot_enabled:
             # Set up plot data
-            plot_data = self.report_content.copy()
-            plot_data["datalines"] = [
-                plot_data["datalines"],
+            plot_data = [
+                {
+                    "plot_color": "red",
+                    "plot_type": "line",
+                    "show_points": True,
+                    "plot_points": plot_points,
+                }
             ]
-            import pdb; pdb.set_trace()  # fmt: skip
+            if self.request.form.get("spec", ""):
+                # get specification for analaysis
+                # find upper and lower limits
+                # create hlines for them
+                # append to plot_data
+                spec = api.get_object(self.request.form.get("spec"))
+                results_range = spec.getResultsRange()
+                if results_range:
+                    an_range = []
+                    for ar in results_range:
+                        logger.info(
+                            "ResultsRange: looking at {} for matching analysis {}".format(
+                                ar["keyword"], analysis.getKeyword()
+                            )
+                        )
+                        if ar["keyword"] == analysis.getKeyword():
+                            an_range.append(ar)
+                    logger.info(
+                        "ResultsRange: found {} for analysis {}".format(
+                            len(an_range), analysis.Title()
+                        )
+                    )
+                    if an_range:
+                        an_range = an_range[0]
+                        spec_min = an_range.get("min")
+                        if spec_min:
+                            plot_data.append(
+                                {
+                                    "plot_color": "green",
+                                    "plot_type": "hline",
+                                    "show_points": False,
+                                    "plot_points": [
+                                        {
+                                            "y": {"type": "float", "value": spec_min},
+                                        },
+                                    ],
+                                }
+                            )
+                        spec_max = an_range.get("max")
+                        if spec_max:
+                            plot_data.append(
+                                {
+                                    "plot_color": "green",
+                                    "plot_type": "hline",
+                                    "show_points": False,
+                                    "plot_points": [
+                                        {
+                                            "y": {"type": "float", "value": spec_max},
+                                        },
+                                    ],
+                                }
+                            )
+
             self.plot_data = json.dumps(plot_data)
+            logger.info("Plot: {}".format(self.plot_data))
 
         # test_template = self.template()
         # print(test_template)
@@ -130,6 +196,19 @@ class Report(BrowserView):
         service = api.get_object_by_uid(query["getServiceUID"])
         out_params.append(
             {"title": _("Analysis Service"), "value": service.Title(), "type": "text"}
+        )
+
+    def add_filter_by_specification(self, query, out_params):
+        if not self.request.form.get("spec", ""):
+            return
+        query["getSpecificationUID"] = self.request.form["spec"]
+        spec = api.get_object_by_uid(query["getSpecificationUID"])
+        out_params.append(
+            {
+                "title": _("Analysis Specification"),
+                "value": spec.Title(),
+                "type": "text",
+            }
         )
 
     def add_filter_by_analyst(self, query, out_params):
@@ -154,14 +233,14 @@ class Report(BrowserView):
         )
 
     def add_filter_by_date_range(self, query, out_params):
-        date_query = formatDateQuery(self.context, "tats_DateReceived")
+        date_query = formatDateQuery(self.context, "ar_DateReceived")
         if not date_query:
             return
         query["getDateReceived"] = date_query
         out_params.append(
             {
                 "title": _("Received"),
-                "value": formatDateParms(self.context, "Tats_DateReceived"),
+                "value": formatDateParms(self.context, "AR_DateReceived"),
                 "type": "text",
             }
         )
@@ -191,37 +270,3 @@ class Report(BrowserView):
             'attachment;filename="analysesperservice_%s.csv"' % date,
         )
         self.request.RESPONSE.write(report_data)
-
-
-test = [
-    [
-        {
-            "plot_color": "#223322",
-            "plot_type": "line",
-            "show_point": True,
-            "plot_points": [
-                {
-                    "x": {"type": "datetime", "value": "2025-01-01 10:30"},
-                    "y": {"type": "float", "value": "30.1"},
-                },
-                {
-                    "x": {"type": "datetime", "value": "2025-01-01 13:30"},
-                    "y": {"type": "float", "value": "20.4"},
-                },
-            ],
-        },
-        {
-            "plot_color": "#88844",
-            "plot_type": "hline",
-            "show_point": True,
-            "plot_points": [
-                {
-                    "y": {"type": "float", "value": "15.0"},
-                },
-                {
-                    "y": {"type": "float", "value": "35.0"},
-                },
-            ],
-        },
-    ]
-]

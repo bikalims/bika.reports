@@ -229,7 +229,22 @@
     };
 
     document.querySelectorAll('.bika-report-plot').forEach(el => {
-      renderPlot(el);
+      // Get data
+      const data = JSON.parse(el.getAttribute('data-report-content'));
+      console.log(data);
+
+      // Create plotter instance
+      const plotter = new D3LinePlotter(
+        el,
+        {
+          // width: 800,
+          // height: 400,
+          // margin: { top: 20, right: 20, bottom: 40, left: 50 }
+        });
+
+      // Plot your data
+      // plotter.plot(data);
+      plotter.renderForPDF(data);
     });
   </script>
 

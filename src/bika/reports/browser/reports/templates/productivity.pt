@@ -308,6 +308,7 @@
                     <tal:x content="structure python:view.selection_macros.select_analysisservice(
                                     allow_blank=False,
                                     multiselect=False)"/>
+                    <tal:x content="structure context/@@selection_macros/select_analysisspecification"/>
                   </fieldset>
                   <fieldset>
                     <tal:x content="structure context/@@selection_macros/select_client"/>
@@ -317,6 +318,11 @@
                                     field_id='Received',
                                     field_title='Date Received')"/>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
+                  </fieldset>
+                  <fieldset>
+                    <tal:x content="structure python:view.selection_macros.select_secondanalysisservice(
+                                    allow_blank=False,
+                                    multiselect=False)"/>
                   </fieldset>
                   <input tabindex=""
                          class="searchButton allowMultiSubmit"

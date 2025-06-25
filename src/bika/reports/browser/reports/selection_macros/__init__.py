@@ -61,6 +61,16 @@ def _cache_key_select_analysisservice(
     return key
 
 
+def _cache_key_select_secondanalysisservice(
+    method, self, allow_blank, multiselect, style=None
+):
+    """
+    This function returns the key used to decide if method select_secondanalysisservice has to be recomputed
+    """
+    key = update_timer(), allow_blank, multiselect, style
+    return key
+
+
 def _cache_key_select_analysisspecification(method, self, style=None):
     """
     This function returns the key used to decide if method select_analysisspecification has to be recomputed
@@ -235,6 +245,36 @@ class SelectionMacrosView(BrowserView):
         return self.select_analysisservice_pt()
 
     def parse_analysisservice(self, request):
+        val = request.form.get("ServiceUID", "")
+        if val:
+            if not type(val) in (list, tuple):
+                val = (val,)  # Single service
+            val = [self.rc.lookupObject(s) for s in val]
+            uids = [o.UID() for o in val]
+            titles = [o.Title() for o in val]
+            res = {}
+            res["contentFilter"] = ("getServiceUID", uids)
+            res["parms"] = {"title": _("Services"), "value": ",".join(titles)}
+            res["titles"] = ",".join(titles)
+            return res
+
+    select_secondanalysisservice_pt = ViewPageTemplateFile(
+        "select_secondanalysisservice.pt"
+    )
+
+    @ram.cache(_cache_key_select_secondanalysisservice)
+    def select_secondanalysisservice(
+        self, allow_blank=True, multiselect=False, style=None
+    ):
+        self.style = style
+        self.allow_blank = allow_blank
+        self.multiselect = multiselect
+        self.analysisservices = self.bsc(
+            portal_type="AnalysisService", sort_on="sortable_title"
+        )
+        return self.select_secondanalysisservice_pt()
+
+    def parse_secondanalysisservice(self, request):
         val = request.form.get("ServiceUID", "")
         if val:
             if not type(val) in (list, tuple):
