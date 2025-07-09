@@ -10,6 +10,7 @@
       /* INITIALIZERS */
       this.bind_eventhandler = this.bind_eventhandler.bind(this);
       this.on_toggle_change = this.on_toggle_change.bind(this);
+      this.on_dropdown_change = this.on_dropdown_change.bind(this);
     }
 
     load() {
@@ -24,7 +25,9 @@
        */
       console.debug("ReportFolderView::bind_eventhandler");
       // When the anchor for a given report is selected, display the report form
-      return $("body").on("click", "a[id$='_selector']", this.on_toggle_change);
+      $("body").on("click", "a[id$='_selector']", this.on_toggle_change);
+      // When the dropdown is changed for a given select, update dependant dropdown
+      return $("body").on("change", "select", this.on_dropdown_change);
     }
 
     on_toggle_change(event) {
@@ -39,8 +42,17 @@
       return $("[id='" + div_id + "']").toggle(true);
     }
 
+    on_dropdown_change(event) {
+      /**
+       * Event handler when dropdown changed
+       */
+      console.debug("°°° ReportFolderView::on_dropdown_change on " + event.target.id + " °°°");
+      return event.preventDefault();
+    }
+
   };
 
+  // Add Here
   obj = new window["ReportFolderView"]();
 
   obj.load();

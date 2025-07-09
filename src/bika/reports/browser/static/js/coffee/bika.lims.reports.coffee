@@ -22,6 +22,8 @@ class window.ReportFolderView
 
     # When the anchor for a given report is selected, display the report form
     $("body").on "click", "a[id$='_selector']", @on_toggle_change
+    # When the dropdown is changed for a given select, update dependant dropdown
+    $("body").on "change", "select", @on_dropdown_change
 
 
   on_toggle_change: (event) =>
@@ -35,5 +37,13 @@ class window.ReportFolderView
     div_id = event.currentTarget.id.split("_selector")[0]
     $("[id='"+div_id+"']").toggle true
 
+  on_dropdown_change: (event) =>
+    ###*
+     * Event handler when dropdown changed
+    ###
+    console.debug "°°° ReportFolderView::on_dropdown_change on " + event.target.id + " °°°"
+    event.preventDefault()
+    # Add Here
+    
 obj = new window["ReportFolderView"]()
 obj.load()

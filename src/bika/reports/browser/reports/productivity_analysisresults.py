@@ -51,7 +51,7 @@ class Report(BrowserView):
             "col_heads": [_("Date"), _("Result")],
             "class": "",
         }
-        self.plot_enabled = True
+        self.plot_enabled = False
 
     def __call__(self):
         parms = []
@@ -71,11 +71,14 @@ class Report(BrowserView):
         # Filter by Specification UID
         self.add_filter_by_specification(query=query, out_params=parms)
 
-        # Filter by Analyst
-        self.add_filter_by_analyst(query=query, out_params=parms)
+        # # Filter by Analyst
+        # self.add_filter_by_analyst(query=query, out_params=parms)
 
         # Filter by date range
         self.add_filter_by_date_range(query=query, out_params=parms)
+
+        # Filter by SampleType
+        self.add_filter_by_sampletype(query=query, out_params=parms)
 
         # Fetch the data
         data_lines = []
@@ -92,6 +95,58 @@ class Report(BrowserView):
             # TODO - using Sample date for testing - change to getDateReceived
             data_point = [
                 {
+                    "value": analysis.Title(),
+                    "class": "text",
+                },
+                {
+                    # "value": str(analysis.getdatereceived())[:16],
+                    "value": str(analysis.getDateSampled())[:16],
+                    "class": "date",
+                },
+                {
+                    "value": analysis.getResult(),
+                    "class": "float",
+                },
+            ]
+            data_lines.append(data_point)
+            plot_points.append({"x": data_point[1], "y": data_point[2]})
+            total_count += 1
+
+        query = dict(
+            portal_type="Analysis", sort_on="getDateReceived", sort_order="ascending"
+        )
+        # filter by Secondary Service UID
+        self.add_filter_by_secondservice(query=query, out_params=parms)
+
+        # filter by specification uid
+        self.add_filter_by_specification(query=query, out_params=parms)
+
+        #  # filter by analyst
+        #  self.add_filter_by_analyst(query=query, out_params=parms)
+
+        # filter by date range
+        self.add_filter_by_date_range(query=query, out_params=parms)
+
+        # Filter by SampleType
+        self.add_filter_by_sampletype(query=query, out_params=parms)
+
+        # Fetch the data
+        logger.info("Select analysis-results query: {}".format(query))
+        analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
+        logger.info("Select analysis-results found {} results".format(len(analyses)))
+        second_plot_points = []
+        for analysis in analyses:
+            analysis = api.get_object(analysis)
+            if not analysis.getResult():
+                continue
+            # HACK
+            # TODO - using Sample date for testing - change to getDateReceived
+            data_point = [
+                {
+                    "value": analysis.Title(),
+                    "class": "text",
+                },
+                {
                     # "value": str(analysis.getDateReceived())[:16],
                     "value": str(analysis.getDateSampled())[:16],
                     "class": "date",
@@ -102,7 +157,7 @@ class Report(BrowserView):
                 },
             ]
             data_lines.append(data_point)
-            plot_points.append({"x": data_point[0], "y": data_point[1]})
+            second_plot_points.append({"x": data_point[1], "y": data_point[2]})
             total_count += 1
 
         if self.request.get("output_format", "") == "CSV":
@@ -123,8 +178,23 @@ class Report(BrowserView):
                     "plot_type": "line",
                     "show_points": True,
                     "plot_points": plot_points,
+                    "y_axis": "left",
+                    "line_style": "solid",
+                    "left_axis_title": "LHS",
                 }
             ]
+            if len(second_plot_points):
+                plot_data.append(
+                    {
+                        "plot_color": "blue",
+                        "plot_type": "line",
+                        "show_points": True,
+                        "plot_points": second_plot_points,
+                        "y_axis": "right",
+                        "line_style": "solid",
+                        "right_axis_title": "RHS",
+                    }
+                )
             if self.request.form.get("spec", ""):
                 # get specification for analaysis
                 # find upper and lower limits
@@ -198,6 +268,15 @@ class Report(BrowserView):
             {"title": _("Analysis Service"), "value": service.Title(), "type": "text"}
         )
 
+    def add_filter_by_secondservice(self, query, out_params):
+        if not self.request.form.get("SecondServiceUID", ""):
+            return
+        query["getServiceUID"] = self.request.form["SecondServiceUID"]
+        service = api.get_object_by_uid(query["getServiceUID"])
+        out_params.append(
+            {"title": _("Analysis Service"), "value": service.Title(), "type": "text"}
+        )
+
     def add_filter_by_specification(self, query, out_params):
         if not self.request.form.get("spec", ""):
             return
@@ -207,6 +286,19 @@ class Report(BrowserView):
             {
                 "title": _("Analysis Specification"),
                 "value": spec.Title(),
+                "type": "text",
+            }
+        )
+
+    def add_filter_by_sampletype(self, query, out_params):
+        if not self.request.form.get("SampleTypeUID", ""):
+            return
+        query["getSampleTypeUID"] = self.request.form["SampleTypeUID"]
+        sampletype = api.get_object_by_uid(query["getSampleTypeUID"])
+        out_params.append(
+            {
+                "title": _("SampleTypeUID"),
+                "value": sampletype.Title(),
                 "type": "text",
             }
         )

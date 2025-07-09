@@ -2,7 +2,7 @@ class D3LinePlotter
   constructor: (@container, @options = {}) ->
     @width = @options.width || 800
     @height = @options.height || 400
-    @margin = @options.margin || { top: 20, right: 20, bottom: 80, left: 50 }
+    @margin = @options.margin || { top: 20, right: 70, bottom: 80, left: 50 }
     @innerWidth = @width - @margin.left - @margin.right
     @innerHeight = @height - @margin.top - @margin.bottom
     
@@ -17,25 +17,45 @@ class D3LinePlotter
     
     # Initialize scales
     @xScale = d3.scaleTime().range([0, @innerWidth])
-    @yScale = d3.scaleLinear().range([@innerHeight, 0])
+    @yScale = d3.scaleLinear().range([@innerHeight, 0])  # Left Y-axis
+    @yScaleRight = d3.scaleLinear().range([@innerHeight, 0])  # Right Y-axis
     
-    # Initialize line generator
+    # Initialize line generators
     @line = d3.line()
       .x((d) => @xScale(d.x))
       .y((d) => @yScale(d.y))
       .curve(d3.curveMonotoneX)
+    
+    @lineRight = d3.line()
+      .x((d) => @xScale(d.x))
+      .y((d) => @yScaleRight(d.y))
+      .curve(d3.curveMonotoneX)
 
   parseData: (rawData) ->
     parsedData = {
-      lines: []
-      hlines: []
+      linesLeft: []
+      linesRight: []
+      hlinesLeft: []
+      hlinesRight: []
+      leftAxisTitle: 'Left Axis'
+      rightAxisTitle: 'Right Axis'
     }
     
     for series in rawData
+      # Determine which Y-axis to use (default to left)
+      useRightAxis = series.y_axis is 'right'
+      
+      # Set axis titles if provided
+      if series.left_axis_title
+        parsedData.leftAxisTitle = series.left_axis_title
+      if series.right_axis_title
+        parsedData.rightAxisTitle = series.right_axis_title
+      
       if series.plot_type is 'line'
         lineData = {
           color: series.plot_color
           showPoints: series.show_points
+          lineStyle: series.line_style || 'solid'  # solid, dashed, dotted
           points: []
         }
         
@@ -45,42 +65,73 @@ class D3LinePlotter
             y: parseFloat(point.y.value)
           })
         
-        parsedData.lines.push(lineData)
+        if useRightAxis
+          parsedData.linesRight.push(lineData)
+        else
+          parsedData.linesLeft.push(lineData)
       
       else if series.plot_type is 'hline'
         hlineData = {
           color: series.plot_color
           y: parseFloat(series.plot_points[0].y.value)
+          lineStyle: series.line_style || 'dashed'
         }
         
-        parsedData.hlines.push(hlineData)
+        if useRightAxis
+          parsedData.hlinesRight.push(hlineData)
+        else
+          parsedData.hlinesLeft.push(hlineData)
     
     return parsedData
 
+  getLineStylePattern: (style) ->
+    switch style
+      when 'solid' then 'none'
+      when 'dashed' then '10,5'
+      when 'dotted' then '3,3'
+      when 'dash-dot' then '10,5,3,5'
+      else 'none'
   updateScales: (data) ->
     # Get all x values from line data
     allXValues = []
-    allYValues = []
+    leftYValues = []
+    rightYValues = []
     
-    for line in data.lines
+    # Collect left axis data
+    for line in data.linesLeft
       for point in line.points
         allXValues.push(point.x)
-        allYValues.push(point.y)
+        leftYValues.push(point.y)
     
-    # Add horizontal line y values
-    for hline in data.hlines
-      allYValues.push(hline.y)
+    for hline in data.hlinesLeft
+      leftYValues.push(hline.y)
     
+    # Collect right axis data
+    for line in data.linesRight
+      for point in line.points
+        allXValues.push(point.x)
+        rightYValues.push(point.y)
+    
+    for hline in data.hlinesRight
+      rightYValues.push(hline.y)
+    
+    # Set X scale domain
     @xScale.domain(d3.extent(allXValues))
     
-    # Add padding to Y domain for better spacing
-    yExtent = d3.extent(allYValues)
-    yRange = yExtent[1] - yExtent[0]
-    yPadding = yRange * 0.1  # 10% padding on top and bottom
+    # Set Y scale domains with padding
+    if leftYValues.length > 0
+      leftExtent = d3.extent(leftYValues)
+      leftRange = leftExtent[1] - leftExtent[0]
+      leftPadding = leftRange * 0.1
+      @yScale.domain([leftExtent[0] - leftPadding, leftExtent[1] + leftPadding])
     
-    @yScale.domain([yExtent[0] - yPadding, yExtent[1] + yPadding])
+    if rightYValues.length > 0
+      rightExtent = d3.extent(rightYValues)
+      rightRange = rightExtent[1] - rightExtent[0]
+      rightPadding = rightRange * 0.1
+      @yScaleRight.domain([rightExtent[0] - rightPadding, rightExtent[1] + rightPadding])
 
-  drawAxes: ->
+  drawAxes: (data) ->
     # X Axis with better date/time formatting
     timeRange = @xScale.domain()
     timeDiff = timeRange[1] - timeRange[0]
@@ -110,20 +161,38 @@ class D3LinePlotter
       .attr('dy', '.15em')
       .attr('transform', 'rotate(-45)')
     
-    # Y Axis
+    # Left Y Axis (integers)
     @g.append('g')
-      .attr('class', 'y-axis')
-      .call(d3.axisLeft(@yScale))
+      .attr('class', 'y-axis-left')
+      .call(d3.axisLeft(@yScale).tickFormat(d3.format('.1f')))
+    
+    # Right Y Axis (floats) - only if we have right-axis data
+    if @yScaleRight.domain()[0] isnt @yScaleRight.domain()[1]
+      @g.append('g')
+        .attr('class', 'y-axis-right')
+        .attr('transform', "translate(#{@innerWidth},0)")
+        .call(d3.axisRight(@yScaleRight).tickFormat(d3.format('.1f')))
     
     # Add axis labels
     @g.append('text')
-      .attr('class', 'axis-label')
+      .attr('class', 'axis-label-left')
       .attr('transform', 'rotate(-90)')
       .attr('y', 0 - @margin.left)
       .attr('x', 0 - (@innerHeight / 2))
       .attr('dy', '1em')
       .style('text-anchor', 'middle')
-      .text('Value')
+      .text(data.leftAxisTitle)
+    
+    # Right axis label (only if we have right-axis data)
+    if @yScaleRight.domain()[0] isnt @yScaleRight.domain()[1]
+      @g.append('text')
+        .attr('class', 'axis-label-right')
+        .attr('transform', 'rotate(-90)')
+        .attr('y', @innerWidth + @margin.right - 10)
+        .attr('x', 0 - (@innerHeight / 2))
+        .attr('dy', '1em')
+        .style('text-anchor', 'middle')
+        .text(data.rightAxisTitle)
     
     @g.append('text')
       .attr('class', 'axis-label')
@@ -131,43 +200,87 @@ class D3LinePlotter
       .style('text-anchor', 'middle')
       .text('Time')
 
-  drawHorizontalLines: (hlines) ->
-    @g.selectAll('.hline')
-      .data(hlines)
+  drawHorizontalLines: (hlinesLeft, hlinesRight) ->
+    # Left axis horizontal lines
+    @g.selectAll('.hline-left')
+      .data(hlinesLeft)
       .enter()
       .append('line')
-      .attr('class', 'hline')
+      .attr('class', 'hline-left')
       .attr('x1', 0)
       .attr('x2', @innerWidth)
       .attr('y1', (d) => @yScale(d.y))
       .attr('y2', (d) => @yScale(d.y))
       .attr('stroke', (d) -> d.color)
       .attr('stroke-width', 2)
-      .attr('stroke-dasharray', '5,5')
+      .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
+      .attr('opacity', 0.7)
+    
+    # Right axis horizontal lines
+    @g.selectAll('.hline-right')
+      .data(hlinesRight)
+      .enter()
+      .append('line')
+      .attr('class', 'hline-right')
+      .attr('x1', 0)
+      .attr('x2', @innerWidth)
+      .attr('y1', (d) => @yScaleRight(d.y))
+      .attr('y2', (d) => @yScaleRight(d.y))
+      .attr('stroke', (d) -> d.color)
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
       .attr('opacity', 0.7)
 
-  drawLines: (lines) ->
-    # Draw line paths
-    @g.selectAll('.line-path')
-      .data(lines)
+  drawLines: (linesLeft, linesRight) ->
+    # Draw left axis line paths
+    @g.selectAll('.line-path-left')
+      .data(linesLeft)
       .enter()
       .append('path')
-      .attr('class', 'line-path')
+      .attr('class', 'line-path-left')
       .attr('d', (d) => @line(d.points))
       .attr('fill', 'none')
       .attr('stroke', (d) -> d.color)
       .attr('stroke-width', 2)
+      .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
     
-    # Draw points if requested
-    for lineData, i in lines
+    # Draw right axis line paths
+    @g.selectAll('.line-path-right')
+      .data(linesRight)
+      .enter()
+      .append('path')
+      .attr('class', 'line-path-right')
+      .attr('d', (d) => @lineRight(d.points))
+      .attr('fill', 'none')
+      .attr('stroke', (d) -> d.color)
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
+    
+    # Draw points for left axis lines
+    for lineData, i in linesLeft
       if lineData.showPoints
-        @g.selectAll(".point-#{i}")
+        @g.selectAll(".point-left-#{i}")
           .data(lineData.points)
           .enter()
           .append('circle')
-          .attr('class', "point-#{i}")
+          .attr('class', "point-left-#{i}")
           .attr('cx', (d) => @xScale(d.x))
           .attr('cy', (d) => @yScale(d.y))
+          .attr('r', 4)
+          .attr('fill', lineData.color)
+          .attr('stroke', 'white')
+          .attr('stroke-width', 2)
+    
+    # Draw points for right axis lines
+    for lineData, i in linesRight
+      if lineData.showPoints
+        @g.selectAll(".point-right-#{i}")
+          .data(lineData.points)
+          .enter()
+          .append('circle')
+          .attr('class', "point-right-#{i}")
+          .attr('cx', (d) => @xScale(d.x))
+          .attr('cy', (d) => @yScaleRight(d.y))
           .attr('r', 4)
           .attr('fill', lineData.color)
           .attr('stroke', 'white')
@@ -244,20 +357,20 @@ class D3LinePlotter
     @updateScales(data)
     
     # Draw components
-    @drawAxes()
-    @drawHorizontalLines(data.hlines)
-    @drawLines(data.lines)
+    @drawAxes(data)
+    @drawHorizontalLines(data.hlinesLeft, data.hlinesRight)
+    @drawLines(data.linesLeft, data.linesRight)
     
     # Only add tooltips if not generating for PDF
     unless @options.forPDF
       @addTooltip()
     
     # Add basic styling
-    @svg.selectAll('.axis-label')
+    @svg.selectAll('.axis-label, .axis-label-left, .axis-label-right')
       .style('font-size', '12px')
       .style('font-family', 'Arial, sans-serif')
     
-    @svg.selectAll('.x-axis, .y-axis')
+    @svg.selectAll('.x-axis, .y-axis-left, .y-axis-right')
       .style('font-size', '11px')
       .style('font-family', 'Arial, sans-serif')
 

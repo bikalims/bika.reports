@@ -1,0 +1,23 @@
+<div class="field" i18n:domain="senaite.core" tal:attributes="style view/style|nothing">
+
+  <label for="SecondServiceUID" i18n:translate="">Secondary analysis service</label>
+
+  <select name="SecondServiceUID:ignore_empty"
+          size="7"
+          id="SecondServiceUID"
+          class="form-control form-control-sm"
+          tal:attributes="size python:view.multiselect and '7' or '1';
+                multiple view/multiselect">
+    <option tal:condition="python:view.allow_blank and not view.multiselect"
+            value=""/>
+    <tal:services  tal:repeat="service view/analysisservices">
+      <option value=""
+              tal:define="service_uid python:service.UID"
+              tal:attributes="value service_uid;
+                              selected python:request.get('SecondServiceUID', '') == service_uid and 'selected' or ''"
+              tal:content="service/Title">
+      </option>
+    </tal:services>
+  </select>
+
+</div>

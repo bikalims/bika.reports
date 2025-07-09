@@ -5,6 +5,7 @@
   <select name="output_format:ignore_empty"
           class="form-control form-control-sm"
           id="output_format">
+    <option/>
     <option
       tal:attributes="selected python:request.get('output_format', '') == 'PDF' and 'selected' or ''"
       tal:content="string:PDF">
