@@ -10,12 +10,6 @@
     <link rel="stylesheet" type="text/css" media="all" href=""
           tal:attributes="href string:$portal_url/reports.css" />
 
-    <script type="text/javascript"
-            tal:attributes="src string:${portal/absolute_url}/++plone++senaite.core.static/modules/d3/d3.min.js"/>
-    <script type="text/javascript"
-              tal:attributes="src string:${portal/absolute_url}/++plone++bika.reports/js/bika.lims.plotter.js"/>
-
-
   </head>
   <body
     tal:define="report_content view/report_content;
@@ -146,105 +140,6 @@
         </p>
       </tal:note>
     </tal:notes>
-
-  <script>
-    function isValidCharacter(char) {
-        const charCode = char.charCodeAt(0);
-        return charCode >= 0 && charCode <= 255; // Valid ASCII range
-    }
-
-    function sanitizeInput(word) {
-        let sanitizedString = '';
-        for (let i = 0; i < word.length; i++) {
-            if (isValidCharacter(word[i])) {
-                sanitizedString += word[i]; // Keep valid characters
-            } else if (word[i].charCodeAt(0) == 8722) {
-                sanitizedString += "-"
-            } else {
-                // Invalid characters are skipped (not added to sanitizedString)
-                console.error('Invalid char: ' + word[i] + ' = ' + word[i].charCodeAt(0));
-            };
-        }
-        return sanitizedString;
-    }
-
-    function safeBtoa(word) {
-      try {
-        const sanitizedInput = sanitizeInput(word);
-        return btoa(sanitizedInput); // Now it's safe to use btoa
-      } catch (error) {
-        console.error('Failed to sanitize  object:', error);
-        throw error;
-      }
-    }
-
-    function insertSVGAsObject(svgElement, targetContainer) {
-      try {
-        // Serialize the SVG to a string
-        const svgData = new XMLSerializer().serializeToString(svgElement);
-        
-        // Ensure proper SVG data URL encoding (no need for base64 if using raw SVG)
-        // b64 = btoa(unescape(encodeURIComponent(svgData)));
-        b64 = safeBtoa(svgData);
-        const svgDataUrl = 'data:image/svg+xml;base64,' + b64;
-        
-        // Create an object element with the data URL
-        const objectElement = document.createElement('object');
-        objectElement.setAttribute('type', 'image/svg+xml');
-        objectElement.setAttribute('data', svgDataUrl);
-
-        // Append object to the target container
-        targetContainer.innerHTML = '';  // Clear existing content
-        targetContainer.appendChild(objectElement);
-        
-        return objectElement;
-
-      } catch (error) {
-        console.error('Failed to insert SVG as object:', error);
-        throw error;
-      }
-    }
-
-    function renderPlot(el) {
-      console.log('renderPlot ...')
-      try {
-        const config = JSON.parse(el.getAttribute('data-report-content'));
-        const bikaPlot = new BikaPlot(config);
-
-        const container = d3.select(el);
-        container.selectAll("svg").remove();  // Clear existing SVGs
-        container.selectAll("img").remove();  // Clear existing SVGs
-
-        bikaPlot.build_plot(el);
-
-        const svg = container.selectAll("svg")
-        insertSVGAsObject(svg.node(), container.node())
-
-      } catch (e) {
-        console.error("renderPlot failed:", e);
-      }
-    };
-
-    document.querySelectorAll('.bika-report-plot').forEach(el => {
-      // Get data
-      const data = JSON.parse(el.getAttribute('data-report-content'));
-      console.log(data);
-
-      // Create plotter instance
-      const plotter = new D3LinePlotter(
-        el,
-        {
-          // width: 800,
-          // height: 400,
-          // margin: { top: 20, right: 20, bottom: 40, left: 50 }
-        });
-
-      // Plot your data
-      // plotter.plot(data);
-      plotter.renderForPDF(data);
-    });
-  </script>
-
 
   </body>
 </html>
