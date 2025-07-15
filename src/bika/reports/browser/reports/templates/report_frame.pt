@@ -5,8 +5,15 @@
              portal_url nocall:context/portal_url">
 
   <body tal:define="accredited view/laboratory/getLaboratoryAccredited;
+                    report_parms view/report_parms;
                     portal python:context.portal_url.getPortalObject();">
 
+    <form class="controls" action="createreport" method="post"
+            tal:attributes="action python:'{}/createreport?{}'.format(here.absolute_url(), report_parms)">
+      <input type="hidden" name="bika-report-plot" class="bika-report-plot" tal:attributes="data-report-content view/plot_data"/>
+      <button type="submit" name="PDF">Save to PDF</button>
+      <button type="cancel" name="Cancel">Cancel</button>
+    </form>
     <table class="header_table">
       <tr>
         <td class="left">

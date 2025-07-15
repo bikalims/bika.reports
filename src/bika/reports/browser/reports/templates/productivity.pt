@@ -323,7 +323,7 @@
                          class="searchButton allowMultiSubmit"
                          type="submit"
                          name="submit"
-                         value="Generate report"
+                         value="Preview report"
                          i18n:attributes="value"/>
                 </form>
               </div>

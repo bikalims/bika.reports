@@ -1,4 +1,7 @@
 (function() {
+  /* Please use this command to compile this file into the parent `js` directory:
+      coffee --no-header -w -o ../ -c bika.lims.plotter.coffee
+  */
   var D3LinePlotter;
 
   D3LinePlotter = class D3LinePlotter {
@@ -62,9 +65,11 @@
         // Set axis titles if provided
         if (series.left_axis_title) {
           parsedData.leftAxisTitle = series.left_axis_title;
+          parsedData.leftAxisColor = series.plot_color;
         }
         if (series.right_axis_title) {
           parsedData.rightAxisTitle = series.right_axis_title;
+          parsedData.rightAxisColor = series.plot_color;
         }
         if (series.plot_type === 'line') {
           lineData = {
@@ -207,11 +212,11 @@
       }
       
       // Add axis labels
-      this.g.append('text').attr('class', 'axis-label-left').attr('transform', 'rotate(-90)').attr('y', 0 - this.margin.left).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('text-anchor', 'middle').text(data.leftAxisTitle);
+      this.g.append('text').attr('class', 'axis-label-left').attr('transform', 'rotate(-90)').attr('y', 0 - this.margin.left).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('text-anchor', 'middle').style('fill', data.leftAxisColor).text(data.leftAxisTitle);
       
       // Right axis label (only if we have right-axis data)
       if (this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
-        this.g.append('text').attr('class', 'axis-label-right').attr('transform', 'rotate(-90)').attr('y', this.innerWidth + this.margin.right - 10).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('text-anchor', 'middle').text(data.rightAxisTitle);
+        this.g.append('text').attr('class', 'axis-label-right').attr('transform', 'rotate(-90)').attr('y', this.innerWidth + this.margin.right - 30).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('fill', data.rightAxisColor).style('text-anchor', 'middle').text(data.rightAxisTitle);
       }
       return this.g.append('text').attr('class', 'axis-label').attr('transform', `translate(${this.innerWidth / 2}, ${this.innerHeight + this.margin.bottom})`).style('text-anchor', 'middle').text('Time');
     }
@@ -308,23 +313,29 @@
       
       // Add necessary styles inline for PDF rendering
       svgString = new XMLSerializer().serializeToString(svgNode);
+      // console.log(svgString);
+      // return svgString;
       
       // Add CSS styles that WeasyPrint can understand
-      styledSVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${this.width}" height="${this.height}">
-  <defs>
-    <style type="text/css"><![CDATA[
-      .axis-label { font-size: 12px; font-family: Arial, sans-serif; }
-      .x-axis text, .y-axis text { font-size: 11px; font-family: Arial, sans-serif; }
-      .x-axis path, .y-axis path, .x-axis line, .y-axis line { 
-        fill: none; stroke: #000; shape-rendering: crispEdges; 
-      }
-      .hline { opacity: 0.7; }
-      .line-path { fill: none; stroke-width: 2px; }
-      text { fill: #000; }
-    ]]></style>
-  </defs>
-  ${svgNode.innerHTML}
-</svg>`;
+      styledSVG = `<svg
+        xmlns="http://www.w3.org/2000/svg"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        width="${this.width}" height="${this.height}">
+        <desc>A Bika Report Chart</desc>
+        <defs>
+          <style type="text/css"><![CDATA[
+            .axis-label { font-size: 12px; font-family: Arial, sans-serif; }
+            .x-axis text, .y-axis text { font-size: 11px; font-family: Arial, sans-serif; }
+            .x-axis path, .y-axis path, .x-axis line, .y-axis line { 
+              fill: none; stroke: #000; shape-rendering: crispEdges; 
+            }
+            .hline { opacity: 0.7; }
+            .line-path { fill: none; stroke-width: 2px; }
+            text { fill: #000; }
+          ]]></style>
+        </defs>
+        ${svgNode.innerHTML}
+      </svg>`;
       return styledSVG;
     }
 

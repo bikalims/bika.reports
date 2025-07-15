@@ -18,8 +18,10 @@
 # Copyright 2018-2021 by it's authors.
 # Some rights reserved, see README and LICENSE.
 
+import bs4
 import importlib
 import os
+import urllib
 
 from DateTime import DateTime
 from Products.CMFCore.utils import getToolByName
@@ -32,7 +34,6 @@ from zope.interface import implements
 from bika.lims import api
 from bika.lims.browser import BrowserView
 from bika.lims.browser.bika_listing import BikaListingView
-from bika.lims.utils import createPdf
 from bika.lims.utils import getUsers
 from bika.lims.utils import logged_in_client
 from bika.reports import _
@@ -40,6 +41,44 @@ from bika.reports.browser.reports.selection_macros import SelectionMacrosView
 from bika.reports.interfaces import IAdministrationReport
 from bika.reports.interfaces import IProductivityReport
 from senaite.core.catalog import REPORT_CATALOG
+
+from bika.lims.utils import createPdf
+import requests
+
+
+def newCreatePdf(html_content):
+
+    # with open("/home/mike/Downloads/original.html", "wb") as f:
+    #     f.write(html_content)
+    # print("HTML successfully saved as 'original.html'.")
+
+    # test_html = "<h1>Hello, Me!</h1><p>This is a PDF generated from HTML.</p>"
+    url = "http://localhost:3010/generate-pdf"
+    payload = {"htmlContent": html_content}
+    result = ""
+    try:
+        # Send the POST request to the service
+        response = requests.post(url, json=payload)
+
+        # Check if the request was successful
+        if response.status_code == 200:
+            result = response.content
+            # # Save the PDF to a file
+            # with open("/home/mike/Dowloads/generated.pdf", "wb") as f:
+            #     f.write(response.content)
+            # print("PDF generated successfully and saved as 'generated.pdf'.")
+        else:
+            print(
+                "Failed to generate PDF: "
+                + response.status_code
+                + " text: "
+                + response.text
+            )
+
+    except Exception as e:
+        print("An error occurred: " + str(e))
+
+    return result
 
 
 class ProductivityView(BrowserView):
@@ -202,6 +241,7 @@ class SubmitForm(BrowserView):
     def __call__(self):
         """Create and render selected report"""
 
+        print("SubmitForm: __call__")
         # if there's an error, we return productivity.pt which requires these.
         self.selection_macros = SelectionMacrosView(self.context, self.request)
         self.additional_reports = []
@@ -211,8 +251,8 @@ class SubmitForm(BrowserView):
             report_dict["id"] = name
             self.additional_reports.append(report_dict)
 
-        report_id = self.request.get("report_id", "")
-        if not report_id:
+        self.report_id = self.request.get("report_id", "")
+        if not self.report_id:
             message = _("No report specified in request")
             self.logger.error(message)
             self.context.plone_utils.addPortalMessage(message, "error")
@@ -261,7 +301,7 @@ class SubmitForm(BrowserView):
         if "report_module" in self.request:
             module = self.request["report_module"]
         else:
-            module = "bika.reports.browser.reports.%s" % report_id
+            module = "bika.reports.browser.reports.%s" % self.report_id
         try:
             Report = getattr(importlib.import_module(module), "Report")
             # required during error redirect: the report must have a copy of
@@ -290,13 +330,25 @@ class SubmitForm(BrowserView):
 
         # The report output gets pulled through report_frame.pt
         self.reportout = output["report_data"]
+        self.report_parms = urllib.urlencode(output["report_parms"])
+        self.report_parms += "&output_format=PDF"
+        self.plot_data = output["plot_data"]
         framed_output = self.frame_template()
 
-        # TODO - HACK
-        if len(self.request.get("output_format", "")) == 0:
-            return framed_output  # HACK - skip PDF
+        self.logger.info("SubmitForm: Create framed_output")
+        self.logger.info("SubmitForm: report_parms: {}".format(self.report_parms))
+        self.logger.info("SubmitForm: framed_output: {}".format(framed_output))
 
-        pdf = createPdf(framed_output)
+        if len(self.request.get("output_format", "")) == 0:
+            self.logger.info("SubmitForm: exit with framed_output")
+            return framed_output
+
+        parser = bs4.BeautifulSoup(framed_output, "html.parser")
+        for el in parser.find_all("form"):
+            el.decompose()
+        for el in parser.find_all("script", class_="svg-plot"):
+            el.decompose()
+        pdf = createPdf(parser.prettify())
 
         # remove temporary files
         for f in self.request["to_remove"]:

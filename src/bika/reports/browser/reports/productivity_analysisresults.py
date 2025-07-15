@@ -18,6 +18,7 @@
 # Copyright 2018-2021 by it's authors.
 # Some rights reserved, see README and LICENSE.
 
+import bs4
 import csv
 import datetime
 import json
@@ -37,7 +38,7 @@ from zope.interface import implements
 
 class Report(BrowserView):
     implements(IViewView)
-    template = ViewPageTemplateFile("templates/report_out.pt")
+    template = ViewPageTemplateFile("templates/productivity_analysisresults.pt")
 
     def __init__(self, context, request, report=None):
         BrowserView.__init__(self, context, request)
@@ -47,13 +48,15 @@ class Report(BrowserView):
             "subheader": _("The results of an analysis plotted over time"),
         }
         self.formats = {
-            "columns": 2,
-            "col_heads": [_("Date"), _("Result")],
+            "columns": 3,
+            "col_heads": [_("Analysis"), _("Date"), _("Result")],
             "class": "",
         }
-        self.plot_enabled = False
+        self.plot_enabled = True
+        print("__init__")
 
     def __call__(self):
+        print("AR Report __call__")
         parms = []
         # HACK - which sort data
         query = dict(
@@ -81,7 +84,9 @@ class Report(BrowserView):
         self.add_filter_by_sampletype(query=query, out_params=parms)
 
         # Fetch the data
-        data_lines = []
+        data_lines = [
+            [{"class": "category_heading", "colspan": 3, "value": "Results"}],
+        ]
         total_count = 0
         logger.info("Select analysis-results query: {}".format(query))
         analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
@@ -172,6 +177,7 @@ class Report(BrowserView):
         }
         if self.plot_enabled:
             # Set up plot data
+            title = api.get_object(self.request.form.get("ServiceUID")).title
             plot_data = [
                 {
                     "plot_color": "red",
@@ -180,10 +186,13 @@ class Report(BrowserView):
                     "plot_points": plot_points,
                     "y_axis": "left",
                     "line_style": "solid",
-                    "left_axis_title": "LHS",
+                    "left_axis_title": title,
                 }
             ]
             if len(second_plot_points):
+                second_title = api.get_object(
+                    self.request.form.get("SecondServiceUID")
+                ).title
                 plot_data.append(
                     {
                         "plot_color": "blue",
@@ -192,7 +201,7 @@ class Report(BrowserView):
                         "plot_points": second_plot_points,
                         "y_axis": "right",
                         "line_style": "solid",
-                        "right_axis_title": "RHS",
+                        "right_axis_title": second_title,
                     }
                 )
             if self.request.form.get("spec", ""):
@@ -251,12 +260,26 @@ class Report(BrowserView):
             self.plot_data = json.dumps(plot_data)
             logger.info("Plot: {}".format(self.plot_data))
 
+        # print("----------------------------------------------------")
         # test_template = self.template()
         # print(test_template)
-        # import pdb; pdb.set_trace()  # fmt: skip
+        # print("----------------------------------------------------")
+
+        tmpl = self.template()
+        if self.request.form.get("bika-report-plot"):
+            parser = bs4.BeautifulSoup(tmpl, "html.parser")
+
+            chart = bs4.BeautifulSoup(
+                self.request.form.get("bika-report-plot"), "html.parser"
+            )
+            parser.body.insert(len(parser.body.contents), chart)
+            tmpl = parser.prettify()
+
         return {
             "report_title": t(self.headings["header"]),
-            "report_data": self.template(),
+            "report_data": tmpl,
+            "report_parms": self.request.form,
+            "plot_data": self.plot_data,
         }
 
     def add_filter_by_service(self, query, out_params):

@@ -1,3 +1,6 @@
+### Please use this command to compile this file into the parent `js` directory:
+    coffee --no-header -w -o ../ -c bika.lims.plotter.coffee
+###
 class D3LinePlotter
   constructor: (@container, @options = {}) ->
     @width = @options.width || 800
