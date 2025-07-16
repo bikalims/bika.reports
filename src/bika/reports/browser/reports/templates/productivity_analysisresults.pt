@@ -162,7 +162,7 @@
 </tal:notes>
 
   <tal:plot tal:condition="python: hasattr(view, 'plot_enabled') and view.plot_enabled or False">
-      <div class="bika-report-plot" tal:attributes="data-report-content view/plot_data"/>
+    <div class="bika-report-plot" tal:attributes="data-report-content view/plot_data"/>
   </tal:plot>
 
   <script class="svg-plot">
@@ -232,7 +232,7 @@
         el,
         {
           width: 700,
-          height: 400,
+          height: 490,
           margin: { top: 60, right: 80, bottom: 60, left: 60 }
         });
 

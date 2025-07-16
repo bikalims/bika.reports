@@ -241,7 +241,12 @@ class SubmitForm(BrowserView):
     def __call__(self):
         """Create and render selected report"""
 
-        print("SubmitForm: __call__")
+        if "Cancel" in self.request.form:
+            came_from = self.request.form.get("came_from", self.context.absolute_url())
+            # Do your form processing
+            self.request.response.redirect(came_from)
+            return
+
         # if there's an error, we return productivity.pt which requires these.
         self.selection_macros = SelectionMacrosView(self.context, self.request)
         self.additional_reports = []
@@ -336,8 +341,8 @@ class SubmitForm(BrowserView):
         framed_output = self.frame_template()
 
         self.logger.info("SubmitForm: Create framed_output")
-        self.logger.info("SubmitForm: report_parms: {}".format(self.report_parms))
-        self.logger.info("SubmitForm: framed_output: {}".format(framed_output))
+        # self.logger.info("SubmitForm: report_parms: {}".format(self.report_parms))
+        # self.logger.info("SubmitForm: framed_output: {}".format(framed_output))
 
         if len(self.request.get("output_format", "")) == 0:
             self.logger.info("SubmitForm: exit with framed_output")

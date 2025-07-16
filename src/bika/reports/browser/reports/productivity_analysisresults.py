@@ -53,10 +53,8 @@ class Report(BrowserView):
             "class": "",
         }
         self.plot_enabled = True
-        print("__init__")
 
     def __call__(self):
-        print("AR Report __call__")
         parms = []
         # HACK - which sort data
         query = dict(
@@ -348,7 +346,7 @@ class Report(BrowserView):
         )
 
     def add_filter_by_date_range(self, query, out_params):
-        date_query = formatDateQuery(self.context, "ar_DateReceived")
+        date_query = formatDateQuery(self.context, "Received")
         if not date_query:
             return
         query["getDateReceived"] = date_query

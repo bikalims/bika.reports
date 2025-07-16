@@ -4,8 +4,8 @@
 class D3LinePlotter
   constructor: (@container, @options = {}) ->
     @width = @options.width || 800
-    @height = @options.height || 400
-    @margin = @options.margin || { top: 20, right: 70, bottom: 80, left: 50 }
+    @height = @options.height || 490
+    @margin = @options.margin || { top: 20, right: 70, bottom: 100, left: 50 }
     @innerWidth = @width - @margin.left - @margin.right
     @innerHeight = @height - @margin.top - @margin.bottom
     
@@ -51,8 +51,10 @@ class D3LinePlotter
       # Set axis titles if provided
       if series.left_axis_title
         parsedData.leftAxisTitle = series.left_axis_title
+        parsedData.leftAxisColor = series.plot_color
       if series.right_axis_title
         parsedData.rightAxisTitle = series.right_axis_title
+        parsedData.rightAxisColor = series.plot_color
       
       if series.plot_type is 'line'
         lineData = {
@@ -184,6 +186,7 @@ class D3LinePlotter
       .attr('x', 0 - (@innerHeight / 2))
       .attr('dy', '1em')
       .style('text-anchor', 'middle')
+      .style('fill', data.leftAxisColor)
       .text(data.leftAxisTitle)
     
     # Right axis label (only if we have right-axis data)
@@ -191,9 +194,10 @@ class D3LinePlotter
       @g.append('text')
         .attr('class', 'axis-label-right')
         .attr('transform', 'rotate(-90)')
-        .attr('y', @innerWidth + @margin.right - 10)
+        .attr('y', @innerWidth + @margin.right - 30)
         .attr('x', 0 - (@innerHeight / 2))
         .attr('dy', '1em')
+        .style('fill', data.rightAxisColor)
         .style('text-anchor', 'middle')
         .text(data.rightAxisTitle)
     
@@ -201,6 +205,7 @@ class D3LinePlotter
       .attr('class', 'axis-label')
       .attr('transform', "translate(#{@innerWidth / 2}, #{@innerHeight + @margin.bottom})")
       .style('text-anchor', 'middle')
+      .attr('y', 5)
       .text('Time')
 
   drawHorizontalLines: (hlinesLeft, hlinesRight) ->

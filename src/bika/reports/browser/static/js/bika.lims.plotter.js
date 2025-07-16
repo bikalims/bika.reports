@@ -9,11 +9,11 @@
       this.container = container;
       this.options = options;
       this.width = this.options.width || 800;
-      this.height = this.options.height || 400;
+      this.height = this.options.height || 490;
       this.margin = this.options.margin || {
         top: 20,
         right: 70,
-        bottom: 80,
+        bottom: 100,
         left: 50
       };
       this.innerWidth = this.width - this.margin.left - this.margin.right;
@@ -218,7 +218,7 @@
       if (this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
         this.g.append('text').attr('class', 'axis-label-right').attr('transform', 'rotate(-90)').attr('y', this.innerWidth + this.margin.right - 30).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('fill', data.rightAxisColor).style('text-anchor', 'middle').text(data.rightAxisTitle);
       }
-      return this.g.append('text').attr('class', 'axis-label').attr('transform', `translate(${this.innerWidth / 2}, ${this.innerHeight + this.margin.bottom})`).style('text-anchor', 'middle').text('Time');
+      return this.g.append('text').attr('class', 'axis-label').attr('transform', `translate(${this.innerWidth / 2}, ${this.innerHeight + this.margin.bottom})`).style('text-anchor', 'middle').attr('y', 5).text('Time');
     }
 
     drawHorizontalLines(hlinesLeft, hlinesRight) {
@@ -313,29 +313,23 @@
       
       // Add necessary styles inline for PDF rendering
       svgString = new XMLSerializer().serializeToString(svgNode);
-      // console.log(svgString);
-      // return svgString;
       
       // Add CSS styles that WeasyPrint can understand
-      styledSVG = `<svg
-        xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink"
-        width="${this.width}" height="${this.height}">
-        <desc>A Bika Report Chart</desc>
-        <defs>
-          <style type="text/css"><![CDATA[
-            .axis-label { font-size: 12px; font-family: Arial, sans-serif; }
-            .x-axis text, .y-axis text { font-size: 11px; font-family: Arial, sans-serif; }
-            .x-axis path, .y-axis path, .x-axis line, .y-axis line { 
-              fill: none; stroke: #000; shape-rendering: crispEdges; 
-            }
-            .hline { opacity: 0.7; }
-            .line-path { fill: none; stroke-width: 2px; }
-            text { fill: #000; }
-          ]]></style>
-        </defs>
-        ${svgNode.innerHTML}
-      </svg>`;
+      styledSVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${this.width}" height="${this.height}">
+  <defs>
+    <style type="text/css"><![CDATA[
+      .axis-label { font-size: 12px; font-family: Arial, sans-serif; }
+      .x-axis text, .y-axis text { font-size: 11px; font-family: Arial, sans-serif; }
+      .x-axis path, .y-axis path, .x-axis line, .y-axis line { 
+        fill: none; stroke: #000; shape-rendering: crispEdges; 
+      }
+      .hline { opacity: 0.7; }
+      .line-path { fill: none; stroke-width: 2px; }
+      text { fill: #000; }
+    ]]></style>
+  </defs>
+  ${svgNode.innerHTML}
+</svg>`;
       return styledSVG;
     }
 
