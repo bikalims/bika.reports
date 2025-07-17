@@ -8,8 +8,9 @@
                     report_parms view/report_parms;
                     portal python:context.portal_url.getPortalObject();">
 
-    <form class="controls" action="createreport" method="post"
-            tal:attributes="action python:'{}/createreport?{}'.format(here.absolute_url(), report_parms)">
+    <form tal:condition="report_parms"
+          class="controls" action="createreport" method="post"
+          tal:attributes="action python:'{}/createreport?{}'.format(here.absolute_url(), report_parms)">
       <div align="center">
         <input type="hidden" name="bika-report-plot" class="bika-report-plot" tal:attributes="data-report-content view/plot_data"/>
         <button type="button" onclick="history.back();">Back</button>

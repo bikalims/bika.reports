@@ -16,7 +16,6 @@
       this.sample_point_selected = this.sample_point_selected.bind(this);
       this.sample_type_selected = this.sample_type_selected.bind(this);
       this.analysis_spec_selected = this.analysis_spec_selected.bind(this);
-      // me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
       this.on_dropdown_change = this.on_dropdown_change.bind(this);
     }
 
@@ -127,15 +126,8 @@
             });
             return result.then(function(data) {
               console.log('Items returned: ' + data.items.length);
-              me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = true);
-              command = 'search?portal_type=AnalysisService';
-              result = me.api.get_json(command, {
-                method: "GET"
-              });
-              return result.then(function(data) {
-                console.log('Items returned: ' + data.items.length);
-                return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
-              });
+              me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
+              return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
             });
           });
         });
@@ -186,15 +178,8 @@
               });
               return result.then(function(data) {
                 console.log('Items returned: ' + data.items.length);
-                me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = true);
-                command = 'search?portal_type=AnalysisService';
-                result = me.api.get_json(command, {
-                  method: "GET"
-                });
-                return result.then(function(data) {
-                  console.log('Items returned: ' + data.items.length);
-                  return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
-                });
+                me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
+                return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
               });
             });
           });
@@ -223,15 +208,8 @@
           });
           return result.then(function(data) {
             console.log('Items returned: ' + data.items.length);
-            me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = true);
-            command = 'search?portal_type=AnalysisService';
-            result = me.api.get_json(command, {
-              method: "GET"
-            });
-            return result.then(function(data) {
-              console.log('Items returned: ' + data.items.length);
-              return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
-            });
+            me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
+            return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
           });
         });
       }
@@ -263,7 +241,8 @@
             return result.then(function(data) {
               var add_empty, clear;
               console.log('Items returned: ' + data.items.length);
-              return me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = true);
+              me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
+              return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
             });
           }
         });

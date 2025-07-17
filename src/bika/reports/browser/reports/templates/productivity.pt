@@ -311,16 +311,20 @@
                     <div tal:content="structure context/@@selection_macros/select_samplepoint" class="update_dropdown"/>
                     <div tal:content="structure context/@@selection_macros/select_sampletype" class="update_dropdown"/>
                     <div tal:content="structure context/@@selection_macros/select_analysisspecification" class="update_dropdown"/>
-                    <tal:x content="structure python:view.selection_macros.select_daterange_received(
-                                    field_id='Received',
-                                    field_title='Date Received')"/>
-                    <div tal:content="structure context/@@selection_macros/select_output_format" hidden/>
+                  </fieldset>
+                  <fieldset>
                     <tal:x content="structure python:view.selection_macros.select_analysisservice(
                                     allow_blank=False,
                                     multiselect=False)"/>
                     <tal:x content="structure python:view.selection_macros.select_secondanalysisservice(
-                                    allow_blank=False,
+                                    allow_blank=True,
                                     multiselect=False)"/>
+                  </fieldset>
+                  <fieldset>
+                    <tal:x content="structure python:view.selection_macros.select_daterange_received(
+                                    field_id='Received',
+                                    field_title='Date Received')"/>
+                    <div tal:content="structure context/@@selection_macros/select_output_format" hidden/>
                   </fieldset>
                   <input tabindex=""
                          class="searchButton allowMultiSubmit"

@@ -55,7 +55,8 @@
         hlinesLeft: [],
         hlinesRight: [],
         leftAxisTitle: 'Left Axis',
-        rightAxisTitle: 'Right Axis'
+        rightAxisTitle: 'Right Axis',
+        hasRightPlot: false
       };
       for (j = 0, len = rawData.length; j < len; j++) {
         series = rawData[j];
@@ -104,6 +105,7 @@
           }
         }
       }
+      parsedData.hasRightPlot = parsedData.linesRight.length > 0 || parsedData.hlinesRight.length > 0;
       return parsedData;
     }
 
@@ -207,7 +209,7 @@
       this.g.append('g').attr('class', 'y-axis-left').call(d3.axisLeft(this.yScale).tickFormat(d3.format('.1f')));
       
       // Right Y Axis (floats) - only if we have right-axis data
-      if (this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
+      if (data.hasRightPlot && this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
         this.g.append('g').attr('class', 'y-axis-right').attr('transform', `translate(${this.innerWidth},0)`).call(d3.axisRight(this.yScaleRight).tickFormat(d3.format('.1f')));
       }
       
@@ -215,7 +217,7 @@
       this.g.append('text').attr('class', 'axis-label-left').attr('transform', 'rotate(-90)').attr('y', 0 - this.margin.left).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('text-anchor', 'middle').style('fill', data.leftAxisColor).text(data.leftAxisTitle);
       
       // Right axis label (only if we have right-axis data)
-      if (this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
+      if (data.hasRightPlot && this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
         this.g.append('text').attr('class', 'axis-label-right').attr('transform', 'rotate(-90)').attr('y', this.innerWidth + this.margin.right - 30).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('fill', data.rightAxisColor).style('text-anchor', 'middle').text(data.rightAxisTitle);
       }
       return this.g.append('text').attr('class', 'axis-label').attr('transform', `translate(${this.innerWidth / 2}, ${this.innerHeight + this.margin.bottom})`).style('text-anchor', 'middle').attr('y', 5).text('Time');
@@ -245,7 +247,7 @@
       }).attr('opacity', 0.7);
     }
 
-    drawLines(linesLeft, linesRight) {
+    drawLines(linesLeft, linesRight, hasRightPlot) {
       var i, j, k, len, len1, lineData, results;
       // Draw left axis line paths
       this.g.selectAll('.line-path-left').data(linesLeft).enter().append('path').attr('class', 'line-path-left').attr('d', (d) => {
@@ -255,15 +257,16 @@
       }).attr('stroke-width', 2).attr('stroke-dasharray', (d) => {
         return this.getLineStylePattern(d.lineStyle);
       });
-      
-      // Draw right axis line paths
-      this.g.selectAll('.line-path-right').data(linesRight).enter().append('path').attr('class', 'line-path-right').attr('d', (d) => {
-        return this.lineRight(d.points);
-      }).attr('fill', 'none').attr('stroke', function(d) {
-        return d.color;
-      }).attr('stroke-width', 2).attr('stroke-dasharray', (d) => {
-        return this.getLineStylePattern(d.lineStyle);
-      });
+      if (hasRightPlot) {
+        // Draw right axis line paths
+        this.g.selectAll('.line-path-right').data(linesRight).enter().append('path').attr('class', 'line-path-right').attr('d', (d) => {
+          return this.lineRight(d.points);
+        }).attr('fill', 'none').attr('stroke', function(d) {
+          return d.color;
+        }).attr('stroke-width', 2).attr('stroke-dasharray', (d) => {
+          return this.getLineStylePattern(d.lineStyle);
+        });
+      }
 
       // Draw points for left axis lines
       for (i = j = 0, len = linesLeft.length; j < len; i = ++j) {
@@ -276,22 +279,23 @@
           }).attr('r', 4).attr('fill', lineData.color).attr('stroke', 'white').attr('stroke-width', 2);
         }
       }
-
-      // Draw points for right axis lines
-      results = [];
-      for (i = k = 0, len1 = linesRight.length; k < len1; i = ++k) {
-        lineData = linesRight[i];
-        if (lineData.showPoints) {
-          results.push(this.g.selectAll(`.point-right-${i}`).data(lineData.points).enter().append('circle').attr('class', `point-right-${i}`).attr('cx', (d) => {
-            return this.xScale(d.x);
-          }).attr('cy', (d) => {
-            return this.yScaleRight(d.y);
-          }).attr('r', 4).attr('fill', lineData.color).attr('stroke', 'white').attr('stroke-width', 2));
-        } else {
-          results.push(void 0);
+      if (hasRightPlot) {
+// Draw points for right axis lines
+        results = [];
+        for (i = k = 0, len1 = linesRight.length; k < len1; i = ++k) {
+          lineData = linesRight[i];
+          if (lineData.showPoints) {
+            results.push(this.g.selectAll(`.point-right-${i}`).data(lineData.points).enter().append('circle').attr('class', `point-right-${i}`).attr('cx', (d) => {
+              return this.xScale(d.x);
+            }).attr('cy', (d) => {
+              return this.yScaleRight(d.y);
+            }).attr('r', 4).attr('fill', lineData.color).attr('stroke', 'white').attr('stroke-width', 2));
+          } else {
+            results.push(void 0);
+          }
         }
+        return results;
       }
-      return results;
     }
 
     addTooltip() {
@@ -354,7 +358,7 @@
       // Draw components
       this.drawAxes(data);
       this.drawHorizontalLines(data.hlinesLeft, data.hlinesRight);
-      this.drawLines(data.linesLeft, data.linesRight);
+      this.drawLines(data.linesLeft, data.linesRight, data.hasRightPlot);
       
       // Only add tooltips if not generating for PDF
       if (!this.options.forPDF) {

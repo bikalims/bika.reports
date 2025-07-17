@@ -335,9 +335,12 @@ class SubmitForm(BrowserView):
 
         # The report output gets pulled through report_frame.pt
         self.reportout = output["report_data"]
-        self.report_parms = urllib.urlencode(output["report_parms"])
-        self.report_parms += "&output_format=PDF"
-        self.plot_data = output["plot_data"]
+        self.report_parms = ""
+        self.plot_data = ""
+        if output.get("report_parms"):
+            self.report_parms = urllib.urlencode(output["report_parms"])
+            self.report_parms += "&output_format=PDF"
+            self.plot_data = output["plot_data"]
         framed_output = self.frame_template()
 
         self.logger.info("SubmitForm: Create framed_output")

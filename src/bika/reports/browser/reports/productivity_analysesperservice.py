@@ -170,5 +170,4 @@ class Report(BrowserView):
             )
             self.request.RESPONSE.write(report_data)
         else:
-            import pdb; pdb.set_trace()  # fmt: skip
             return {"report_title": title, "report_data": self.template()}

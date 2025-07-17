@@ -42,6 +42,7 @@ class D3LinePlotter
       hlinesRight: []
       leftAxisTitle: 'Left Axis'
       rightAxisTitle: 'Right Axis'
+      hasRightPlot: false
     }
     
     for series in rawData
@@ -87,6 +88,7 @@ class D3LinePlotter
         else
           parsedData.hlinesLeft.push(hlineData)
     
+    parsedData.hasRightPlot = parsedData.linesRight.length > 0 or parsedData.hlinesRight.length > 0
     return parsedData
 
   getLineStylePattern: (style) ->
@@ -172,7 +174,7 @@ class D3LinePlotter
       .call(d3.axisLeft(@yScale).tickFormat(d3.format('.1f')))
     
     # Right Y Axis (floats) - only if we have right-axis data
-    if @yScaleRight.domain()[0] isnt @yScaleRight.domain()[1]
+    if data.hasRightPlot and @yScaleRight.domain()[0] isnt @yScaleRight.domain()[1]
       @g.append('g')
         .attr('class', 'y-axis-right')
         .attr('transform', "translate(#{@innerWidth},0)")
@@ -190,7 +192,7 @@ class D3LinePlotter
       .text(data.leftAxisTitle)
     
     # Right axis label (only if we have right-axis data)
-    if @yScaleRight.domain()[0] isnt @yScaleRight.domain()[1]
+    if data.hasRightPlot and @yScaleRight.domain()[0] isnt @yScaleRight.domain()[1]
       @g.append('text')
         .attr('class', 'axis-label-right')
         .attr('transform', 'rotate(-90)')
@@ -239,7 +241,7 @@ class D3LinePlotter
       .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
       .attr('opacity', 0.7)
 
-  drawLines: (linesLeft, linesRight) ->
+  drawLines: (linesLeft, linesRight, hasRightPlot) ->
     # Draw left axis line paths
     @g.selectAll('.line-path-left')
       .data(linesLeft)
@@ -252,17 +254,18 @@ class D3LinePlotter
       .attr('stroke-width', 2)
       .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
     
-    # Draw right axis line paths
-    @g.selectAll('.line-path-right')
-      .data(linesRight)
-      .enter()
-      .append('path')
-      .attr('class', 'line-path-right')
-      .attr('d', (d) => @lineRight(d.points))
-      .attr('fill', 'none')
-      .attr('stroke', (d) -> d.color)
-      .attr('stroke-width', 2)
-      .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
+    if hasRightPlot
+      # Draw right axis line paths
+      @g.selectAll('.line-path-right')
+        .data(linesRight)
+        .enter()
+        .append('path')
+        .attr('class', 'line-path-right')
+        .attr('d', (d) => @lineRight(d.points))
+        .attr('fill', 'none')
+        .attr('stroke', (d) -> d.color)
+        .attr('stroke-width', 2)
+        .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
     
     # Draw points for left axis lines
     for lineData, i in linesLeft
@@ -279,20 +282,21 @@ class D3LinePlotter
           .attr('stroke', 'white')
           .attr('stroke-width', 2)
     
-    # Draw points for right axis lines
-    for lineData, i in linesRight
-      if lineData.showPoints
-        @g.selectAll(".point-right-#{i}")
-          .data(lineData.points)
-          .enter()
-          .append('circle')
-          .attr('class', "point-right-#{i}")
-          .attr('cx', (d) => @xScale(d.x))
-          .attr('cy', (d) => @yScaleRight(d.y))
-          .attr('r', 4)
-          .attr('fill', lineData.color)
-          .attr('stroke', 'white')
-          .attr('stroke-width', 2)
+    if hasRightPlot
+      # Draw points for right axis lines
+      for lineData, i in linesRight
+        if lineData.showPoints
+          @g.selectAll(".point-right-#{i}")
+            .data(lineData.points)
+            .enter()
+            .append('circle')
+            .attr('class', "point-right-#{i}")
+            .attr('cx', (d) => @xScale(d.x))
+            .attr('cy', (d) => @yScaleRight(d.y))
+            .attr('r', 4)
+            .attr('fill', lineData.color)
+            .attr('stroke', 'white')
+            .attr('stroke-width', 2)
 
   addTooltip: ->
     tooltip = d3.select('body').append('div')
@@ -367,7 +371,7 @@ class D3LinePlotter
     # Draw components
     @drawAxes(data)
     @drawHorizontalLines(data.hlinesLeft, data.hlinesRight)
-    @drawLines(data.linesLeft, data.linesRight)
+    @drawLines(data.linesLeft, data.linesRight, data.hasRightPlot)
     
     # Only add tooltips if not generating for PDF
     unless @options.forPDF

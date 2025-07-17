@@ -187,7 +187,7 @@ class Report(BrowserView):
                     "left_axis_title": title,
                 }
             ]
-            if len(second_plot_points):
+            if len(second_plot_points) and self.request.form.get("SecondServiceUID"):
                 second_title = api.get_object(
                     self.request.form.get("SecondServiceUID")
                 ).title
