@@ -3,8 +3,10 @@
   <label for="spec" i18n:translate="label_specification">Specification</label>
 
   <tal:specs>
-    <select id="spec" class="noborder" name="spec">
-      <option value=""></option>
+    <select id="spec" 
+          class="form-control form-control-sm"
+          name="spec">
+      <option tal:condition="python:view.allow_blank" value=""/>
       <tal:x repeat="spec view/specs">
         <option tal:condition="python:not (request.get('spec', None) and request.get('spec', None) == spec['uid'])"
                 tal:attributes="value spec/uid;"

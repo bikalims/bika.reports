@@ -81,6 +81,8 @@
       <script type="text/javascript"
               tal:attributes="src python:portal.absolute_url() + '/senaite_widgets/datetimewidget.js'"></script>
       <script type="text/javascript"
+            tal:attributes="src string:${portal_url}/++plone++bika.reports/js/api.js"></script>
+      <script type="text/javascript"
               src="bika.lims.reports.js"
               tal:attributes="src string:${portal/absolute_url}/++plone++bika.reports/js/bika.lims.reports.js"></script>
     </metal:block>
@@ -305,13 +307,14 @@
                   <input type="hidden" name="report_id"
                          value="productivity_analysisresults"/>
                   <fieldset>
-                    <tal:x content="structure context/@@selection_macros/select_client"/>
-                    <tal:x content="structure context/@@selection_macros/select_sampletype"/>
-                    <tal:x content="structure context/@@selection_macros/select_analysisspecification"/>
+                    <div tal:content="structure context/@@selection_macros/select_client" class="update_dropdown"/>
+                    <div tal:content="structure context/@@selection_macros/select_samplepoint" class="update_dropdown"/>
+                    <div tal:content="structure context/@@selection_macros/select_sampletype" class="update_dropdown"/>
+                    <div tal:content="structure context/@@selection_macros/select_analysisspecification" class="update_dropdown"/>
                     <tal:x content="structure python:view.selection_macros.select_daterange_received(
                                     field_id='Received',
                                     field_title='Date Received')"/>
-                    <tal:x content="structure context/@@selection_macros/select_output_format"/>
+                    <div tal:content="structure context/@@selection_macros/select_output_format" hidden/>
                     <tal:x content="structure python:view.selection_macros.select_analysisservice(
                                     allow_blank=False,
                                     multiselect=False)"/>

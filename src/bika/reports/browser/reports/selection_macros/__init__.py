@@ -177,6 +177,16 @@ def _cache_key_select_sample_type(
     return key
 
 
+def _cache_key_select_sample_point(
+    method, self, allow_blank=True, multiselect=False, style=None
+):
+    """
+    This function returns the key used to decide if method select_sample_point has to be recomputed
+    """
+    key = update_timer(), allow_blank, multiselect, style
+    return key
+
+
 def _cache_key_select_groupingperiod(
     method, self, allow_blank=True, multiselect=False, style=None
 ):
@@ -224,7 +234,7 @@ class SelectionMacrosView(BrowserView):
 
     select_analysiscategory_pt = ViewPageTemplateFile("select_analysiscategory.pt")
 
-    @ram.cache(_cache_key_select_analysiscategory)
+    # @ram.cache(_cache_key_select_analysiscategory)
     def select_analysiscategory(self, style=None):
         self.style = style
         self.analysiscategories = self.bsc(
@@ -234,7 +244,7 @@ class SelectionMacrosView(BrowserView):
 
     select_analysisservice_pt = ViewPageTemplateFile("select_analysisservice.pt")
 
-    @ram.cache(_cache_key_select_analysisservice)
+    # @ram.cache(_cache_key_select_analysisservice)
     def select_analysisservice(self, allow_blank=True, multiselect=False, style=None):
         self.style = style
         self.allow_blank = allow_blank
@@ -262,7 +272,7 @@ class SelectionMacrosView(BrowserView):
         "select_secondanalysisservice.pt"
     )
 
-    @ram.cache(_cache_key_select_secondanalysisservice)
+    # @ram.cache(_cache_key_select_secondanalysisservice)
     def select_secondanalysisservice(
         self, allow_blank=True, multiselect=False, style=None
     ):
@@ -292,9 +302,10 @@ class SelectionMacrosView(BrowserView):
         "select_analysisspecification.pt"
     )
 
-    @ram.cache(_cache_key_select_analysisspecification)
-    def select_analysisspecification(self, style=None):
+    # @ram.cache(_cache_key_select_analysisspecification)
+    def select_analysisspecification(self, allow_blank=True, style=None):
         self.style = style
+        self.allow_blank = allow_blank
         res = []
         bsc = getToolByName(self.context, "senaite_catalog_setup")
         for s in bsc(portal_type="AnalysisSpec"):
@@ -358,27 +369,27 @@ class SelectionMacrosView(BrowserView):
         self.field_title = _(field_title)
         return self.select_daterange_pt()
 
-    @ram.cache(_cache_key_select_daterange)
+    # @ram.cache(_cache_key_select_daterange)
     def select_daterange(self, field_id, field_title, style=None):
         return self._select_daterange(field_id, field_title, style)
 
-    @ram.cache(_cache_key_select_daterange)
+    # @ram.cache(_cache_key_select_daterange)
     def select_daterange_requested(self, field_id, field_title, style=None):
         return self._select_daterange(field_id, field_title, style)
 
-    @ram.cache(_cache_key_select_daterange)
+    # @ram.cache(_cache_key_select_daterange)
     def select_daterange_created(self, field_id, field_title, style=None):
         return self._select_daterange(field_id, field_title, style)
 
-    @ram.cache(_cache_key_select_daterange)
+    # @ram.cache(_cache_key_select_daterange)
     def select_daterange_received(self, field_id, field_title, style=None):
         return self._select_daterange(field_id, field_title, style)
 
-    @ram.cache(_cache_key_select_daterange)
+    # @ram.cache(_cache_key_select_daterange)
     def select_daterange_published(self, field_id, field_title, style=None):
         return self._select_daterange(field_id, field_title, style)
 
-    @ram.cache(_cache_key_select_daterange)
+    # @ram.cache(_cache_key_select_daterange)
     def select_daterange_loaded(self, field_id, field_title, style=None):
         return self._select_daterange(field_id, field_title, style)
 
@@ -500,9 +511,32 @@ class SelectionMacrosView(BrowserView):
             res["titles"] = state_title
             return res
 
+    select_samplepoint_pt = ViewPageTemplateFile("select_samplepoint.pt")
+
+    # @ram.cache(_cache_key_select_sample_point)
+    def select_samplepoint(self, allow_blank=True, multiselect=False, style=None):
+        self.style = style
+        self.allow_blank = allow_blank
+        self.multiselect = multiselect
+        self.samplepoints = self.bsc(
+            portal_type="SamplePoint", is_active=True, sort_on="sortable_title"
+        )
+        return self.select_samplepoint_pt()
+
+    def parse_samplepoint(self, request):
+        val = request.form.get("SamplePointUID", "")
+        if val:
+            obj = val and self.rc.lookupObject(val)
+            title = obj.Title()
+            res = {}
+            res["contentFilter"] = ("getSamplePointUID", val)
+            res["parms"] = {"title": _("Sample Point"), "value": title}
+            res["titles"] = title
+            return res
+
     select_sampletype_pt = ViewPageTemplateFile("select_sampletype.pt")
 
-    @ram.cache(_cache_key_select_sample_type)
+    # @ram.cache(_cache_key_select_sample_type)
     def select_sampletype(self, allow_blank=True, multiselect=False, style=None):
         self.style = style
         self.allow_blank = allow_blank
