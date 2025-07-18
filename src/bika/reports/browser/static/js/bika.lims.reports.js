@@ -51,9 +51,11 @@
       return $("[id='" + div_id + "']").toggle(true);
     }
 
-    call_command(command) {
+    call_command(command, limit = 1000) {
       var result;
-      command += '&limit=1000';
+      if (limit) {
+        command += '&limit=' + limit;
+      }
       console.log("call_command: " + command);
       result = this.api.get_json(command, {
         method: "GET"
@@ -62,7 +64,7 @@
     }
 
     populate_dropdown(el_name, items, clear = true, add_empty = false) {
-      var $el, i, item, len, results;
+      var $el, i, item, len, results, sorted_items;
       // Empty select
       $el = $(el_name);
       
@@ -74,11 +76,21 @@
       if (add_empty) {
         $('<option>').val('').text('').appendTo($el); // Empty option
       }
-
-      // Add new options
+      
+      // sort items
+      sorted_items = items.sort(function(a, b) {
+        if (a.title < b.title) {
+          return -1;
+        } else if (a.title > b.title) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+// Add new options
       results = [];
-      for (i = 0, len = items.length; i < len; i++) {
-        item = items[i];
+      for (i = 0, len = sorted_items.length; i < len; i++) {
+        item = sorted_items[i];
         results.push($('<option>').val(item.uid).text(item.title).appendTo($el));
       }
       return results;
@@ -119,7 +131,7 @@
         result = me.call_command(command);
         return result.then(function(data) {
           console.log('Items returned: ' + data.items.length);
-          me.populate_dropdown('#SampleTypeUID', data.items, clear = false, add_empty = false);
+          me.populate_dropdown('#SampleTypeUID', data.items, clear = true, add_empty = true);
           command = 'search?portal_type=AnalysisSpec';
           result = me.call_command(command);
           return result.then(function(data) {
@@ -138,14 +150,14 @@
     }
 
     sample_point_selected(selected_sample_point) {
-      var command, me, result;
+      var command, limit, me, result;
       console.log('Got SamplePointUID" ' + selected_sample_point);
       me = this;
       if (selected_sample_point) {
         command = 'samplepoint/' + selected_sample_point;
         
         // Get samplepoint
-        result = me.call_command(command);
+        result = me.call_command(command, limit = 0);
         return result.then(function(data) {
           var i, len, sample_type_uid, sample_type_uids;
           console.log('Items returned: ' + data.items.length);
@@ -209,12 +221,12 @@
     }
 
     analysis_spec_selected(selected_analysis_spec) {
-      var command, me, result;
+      var command, limit, me, result;
       console.log('Got AnalysisSpec" ' + selected_analysis_spec);
       me = this;
       if (selected_analysis_spec) {
         command = 'analysisspec/' + selected_analysis_spec;
-        result = me.call_command(command);
+        result = me.call_command(command, limit = 0);
         return result.then(function(data) {
           var i, len, service_uid, service_uids;
           service_uids = me.get_object_values('ResultsRange', data.items);
@@ -236,8 +248,8 @@
           }
         });
       } else {
-        command = 'search?portal_type=AnalysisService';
         // Get Services
+        command = 'search?portal_type=AnalysisService';
         result = me.call_command(command);
         return result.then(function(data) {
           var add_empty, clear;
@@ -267,8 +279,8 @@
         this.client_selected(selected_client);
       }
       if (e.target.id === 'SamplePointUID') {
-        console.log('SamplePointUID selected');
         selected_sample_point = $(e.target).val();
+        console.log('SamplePointUID selected: ' + selected_sample_point);
         this.sample_point_selected(selected_sample_point);
       }
       if (e.target.id === 'SampleTypeUID') {

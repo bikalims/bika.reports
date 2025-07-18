@@ -249,9 +249,7 @@ class SelectionMacrosView(BrowserView):
         self.style = style
         self.allow_blank = allow_blank
         self.multiselect = multiselect
-        self.analysisservices = self.bsc(
-            portal_type="AnalysisService", sort_on="sortable_title"
-        )
+        self.analysisservices = self.bsc(portal_type="AnalysisService", sort_on="title")
         return self.select_analysisservice_pt()
 
     def parse_analysisservice(self, request):
@@ -279,9 +277,7 @@ class SelectionMacrosView(BrowserView):
         self.style = style
         self.allow_blank = allow_blank
         self.multiselect = multiselect
-        self.analysisservices = self.bsc(
-            portal_type="AnalysisService", sort_on="sortable_title"
-        )
+        self.analysisservices = self.bsc(portal_type="AnalysisService", sort_on="title")
         return self.select_secondanalysisservice_pt()
 
     def parse_secondanalysisservice(self, request):
