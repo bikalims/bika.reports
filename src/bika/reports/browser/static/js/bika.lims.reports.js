@@ -10,6 +10,7 @@
       /* INITIALIZERS */
       this.bind_eventhandler = this.bind_eventhandler.bind(this);
       this.on_toggle_change = this.on_toggle_change.bind(this);
+      this.call_command = this.call_command.bind(this);
       this.populate_dropdown = this.populate_dropdown.bind(this);
       this.get_object_values = this.get_object_values.bind(this);
       this.client_selected = this.client_selected.bind(this);
@@ -48,6 +49,16 @@
       $(".criteria").toggle(false);
       div_id = event.currentTarget.id.split("_selector")[0];
       return $("[id='" + div_id + "']").toggle(true);
+    }
+
+    call_command(command) {
+      var result;
+      command += '&limit=1000';
+      console.log("call_command: " + command);
+      result = this.api.get_json(command, {
+        method: "GET"
+      });
+      return result;
     }
 
     populate_dropdown(el_name, items, clear = true, add_empty = false) {
@@ -99,31 +110,23 @@
         command = 'search?portal_type=SamplePoint&getClientUID=';
       }
       // Get items
-      result = me.api.get_json(command, {
-        method: "GET"
-      });
+      result = me.call_command(command);
       return result.then(function(data) {
         var add_empty, clear;
         console.log('Items returned: ' + data.items.length);
         me.populate_dropdown('#SamplePointUID', data.items, clear = true, add_empty = true);
         command = 'search?portal_type=SampleType';
-        result = me.api.get_json(command, {
-          method: "GET"
-        });
+        result = me.call_command(command);
         return result.then(function(data) {
           console.log('Items returned: ' + data.items.length);
           me.populate_dropdown('#SampleTypeUID', data.items, clear = false, add_empty = false);
           command = 'search?portal_type=AnalysisSpec';
-          result = me.api.get_json(command, {
-            method: "GET"
-          });
+          result = me.call_command(command);
           return result.then(function(data) {
             console.log('Items returned: ' + data.items.length);
             me.populate_dropdown('#spec', data.items, clear = true, add_empty = true);
             command = 'search?portal_type=AnalysisService';
-            result = me.api.get_json(command, {
-              method: "GET"
-            });
+            result = me.call_command(command);
             return result.then(function(data) {
               console.log('Items returned: ' + data.items.length);
               me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
@@ -142,9 +145,7 @@
         command = 'samplepoint/' + selected_sample_point;
         
         // Get samplepoint
-        result = me.api.get_json(command, {
-          method: "GET"
-        });
+        result = me.call_command(command);
         return result.then(function(data) {
           var i, len, sample_type_uid, sample_type_uids;
           console.log('Items returned: ' + data.items.length);
@@ -158,24 +159,18 @@
           }
           
           // Get items
-          result = me.api.get_json(command, {
-            method: "GET"
-          });
+          result = me.call_command(command);
           return result.then(function(data) {
             var add_empty, clear;
             console.log('Items returned: ' + data.items.length);
             me.populate_dropdown('#SampleTypeUID', data.items, clear = true, add_empty = true);
             command = 'search?portal_type=AnalysisSpec';
-            result = me.api.get_json(command, {
-              method: "GET"
-            });
+            result = me.call_command(command);
             return result.then(function(data) {
               console.log('Items returned: ' + data.items.length);
               me.populate_dropdown('#spec', data.items, clear = true, add_empty = true);
               command = 'search?portal_type=AnalysisService';
-              result = me.api.get_json(command, {
-                method: "GET"
-              });
+              result = me.call_command(command);
               return result.then(function(data) {
                 console.log('Items returned: ' + data.items.length);
                 me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
@@ -193,26 +188,24 @@
       me = this;
       if (selected_sample_type) {
         command = 'search?portal_type=AnalysisSpec&sampletype_uid=' + selected_sample_type;
-        
-        // Get items
-        result = me.api.get_json(command, {
-          method: "GET"
-        });
-        return result.then(function(data) {
-          var add_empty, clear;
-          console.log('Items returned: ' + data.items.length);
-          me.populate_dropdown('#spec', data.items, clear = true, add_empty = true);
-          command = 'search?portal_type=AnalysisService';
-          result = me.api.get_json(command, {
-            method: "GET"
-          });
-          return result.then(function(data) {
-            console.log('Items returned: ' + data.items.length);
-            me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
-            return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
-          });
-        });
+      } else {
+        command = 'search?portal_type=AnalysisSpec';
       }
+      
+      // Get items
+      result = me.call_command(command);
+      return result.then(function(data) {
+        var add_empty, clear;
+        console.log('Items returned: ' + data.items.length);
+        me.populate_dropdown('#spec', data.items, clear = true, add_empty = true);
+        command = 'search?portal_type=AnalysisService';
+        result = me.call_command(command);
+        return result.then(function(data) {
+          console.log('Items returned: ' + data.items.length);
+          me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
+          return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
+        });
+      });
     }
 
     analysis_spec_selected(selected_analysis_spec) {
@@ -221,9 +214,7 @@
       me = this;
       if (selected_analysis_spec) {
         command = 'analysisspec/' + selected_analysis_spec;
-        result = me.api.get_json(command, {
-          method: "GET"
-        });
+        result = me.call_command(command);
         return result.then(function(data) {
           var i, len, service_uid, service_uids;
           service_uids = me.get_object_values('ResultsRange', data.items);
@@ -235,9 +226,7 @@
             }
             
             // Get Services
-            result = me.api.get_json(command, {
-              method: "GET"
-            });
+            result = me.call_command(command);
             return result.then(function(data) {
               var add_empty, clear;
               console.log('Items returned: ' + data.items.length);
@@ -245,6 +234,16 @@
               return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
             });
           }
+        });
+      } else {
+        command = 'search?portal_type=AnalysisService';
+        // Get Services
+        result = me.call_command(command);
+        return result.then(function(data) {
+          var add_empty, clear;
+          console.log('Items returned: ' + data.items.length);
+          me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
+          return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
         });
       }
     }

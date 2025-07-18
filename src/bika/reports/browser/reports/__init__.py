@@ -96,6 +96,8 @@ class ProductivityView(BrowserView):
         self.selection_macros = SelectionMacrosView(self.context, self.request)
         self.icon = self.portal_url + "/++resource++bika.lims.images/report_big.png"
         self.getAnalysts = getUsers(self.context, ["Manager", "LabManager", "Analyst"])
+        self.last_month = DateTime() - 30
+        self.last_month = self.last_month.strftime("%Y-%m-%d")
 
         self.additional_reports = []
         adapters = getAdapters((self.context,), IProductivityReport)

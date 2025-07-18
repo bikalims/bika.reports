@@ -39,6 +39,12 @@ class window.ReportFolderView
     div_id = event.currentTarget.id.split("_selector")[0]
     $("[id='"+div_id+"']").toggle true
 
+  call_command: (command) =>
+    command += '&limit=1000'
+    console.log "call_command: " + command
+    result = this.api.get_json command, method: "GET"
+    return result
+
   populate_dropdown: (el_name, items, clear=true, add_empty=false) =>
       # Empty select
       $el = $(el_name)
@@ -71,25 +77,25 @@ class window.ReportFolderView
     else
       command = 'search?portal_type=SamplePoint&getClientUID='
     # Get items
-    result = me.api.get_json command, method: "GET"
+    result = me.call_command(command)
     result.then (data) ->
       console.log('Items returned: ' + data.items.length)
       me.populate_dropdown('#SamplePointUID', data.items, clear=true, add_empty=true)
       
       command = 'search?portal_type=SampleType'
-      result = me.api.get_json command, method: "GET"
+      result = me.call_command(command)
       result.then (data) ->
          console.log('Items returned: ' + data.items.length)
          me.populate_dropdown('#SampleTypeUID', data.items, clear=false, add_empty=false)
 
          command = 'search?portal_type=AnalysisSpec'
-         result = me.api.get_json command, method: "GET"
+         result = me.call_command(command)
          result.then (data) ->
             console.log('Items returned: ' + data.items.length)
             me.populate_dropdown('#spec', data.items, clear=true, add_empty=true)
 
             command = 'search?portal_type=AnalysisService'
-            result = me.api.get_json command, method: "GET"
+            result = me.call_command(command)
             result.then (data) ->
                console.log('Items returned: ' + data.items.length)
                me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
@@ -102,7 +108,7 @@ class window.ReportFolderView
       command = 'samplepoint/' + selected_sample_point
    
       # Get samplepoint
-      result = me.api.get_json command, method: "GET"
+      result = me.call_command(command)
       result.then (data) ->
          console.log('Items returned: ' + data.items.length)
          command = 'search?portal_type=SampleType'
@@ -112,19 +118,19 @@ class window.ReportFolderView
              command += '&UID=' + sample_type_uid
        
          # Get items
-         result = me.api.get_json command, method: "GET"
+         result = me.call_command(command)
          result.then (data) ->
             console.log('Items returned: ' + data.items.length)
             me.populate_dropdown('#SampleTypeUID', data.items, clear=true, add_empty=true)
 
             command = 'search?portal_type=AnalysisSpec'
-            result = me.api.get_json command, method: "GET"
+            result = me.call_command(command)
             result.then (data) ->
                console.log('Items returned: ' + data.items.length)
                me.populate_dropdown('#spec', data.items, clear=true, add_empty=true)
 
                command = 'search?portal_type=AnalysisService'
-               result = me.api.get_json command, method: "GET"
+               result = me.call_command(command)
                result.then (data) ->
                   console.log('Items returned: ' + data.items.length)
                   me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
@@ -136,26 +142,28 @@ class window.ReportFolderView
     me = this
     if selected_sample_type
        command = 'search?portal_type=AnalysisSpec&sampletype_uid=' + selected_sample_type
+     else
+       command = 'search?portal_type=AnalysisSpec'
      
-       # Get items
-       result = me.api.get_json command, method: "GET"
-       result.then (data) ->
-          console.log('Items returned: ' + data.items.length)
-          me.populate_dropdown('#spec', data.items, clear=true, add_empty=true)
+     # Get items
+     result = me.call_command(command)
+     result.then (data) ->
+        console.log('Items returned: ' + data.items.length)
+        me.populate_dropdown('#spec', data.items, clear=true, add_empty=true)
 
-          command = 'search?portal_type=AnalysisService'
-          result = me.api.get_json command, method: "GET"
-          result.then (data) ->
-             console.log('Items returned: ' + data.items.length)
-             me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
-             me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
+        command = 'search?portal_type=AnalysisService'
+        result = me.call_command(command)
+        result.then (data) ->
+           console.log('Items returned: ' + data.items.length)
+           me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
+           me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
 
   analysis_spec_selected: (selected_analysis_spec) =>
     console.log 'Got AnalysisSpec" ' + selected_analysis_spec
     me = this
     if selected_analysis_spec
       command = 'analysisspec/' + selected_analysis_spec
-      result = me.api.get_json command, method: "GET"
+      result = me.call_command(command)
       result.then (data) ->
          service_uids = me.get_object_values('ResultsRange', data.items)
 
@@ -165,11 +173,19 @@ class window.ReportFolderView
              command += '&UID=' + service_uid
    
            # Get Services
-           result = me.api.get_json command, method: "GET"
+           result = me.call_command(command)
            result.then (data) ->
               console.log('Items returned: ' + data.items.length)
               me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
               me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
+    else
+      command = 'search?portal_type=AnalysisService'
+      # Get Services
+      result = me.call_command(command)
+      result.then (data) ->
+         console.log('Items returned: ' + data.items.length)
+         me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
+         me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
 
 
   on_dropdown_change: (e) =>

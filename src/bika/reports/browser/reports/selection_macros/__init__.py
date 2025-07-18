@@ -363,10 +363,11 @@ class SelectionMacrosView(BrowserView):
 
     select_daterange_pt = ViewPageTemplateFile("select_daterange.pt")
 
-    def _select_daterange(self, field_id, field_title, style=None):
+    def _select_daterange(self, field_id, field_title, style=None, default_value=None):
         self.style = style
         self.field_id = field_id
         self.field_title = _(field_title)
+        self.default_value = default_value
         return self.select_daterange_pt()
 
     # @ram.cache(_cache_key_select_daterange)
@@ -382,8 +383,10 @@ class SelectionMacrosView(BrowserView):
         return self._select_daterange(field_id, field_title, style)
 
     # @ram.cache(_cache_key_select_daterange)
-    def select_daterange_received(self, field_id, field_title, style=None):
-        return self._select_daterange(field_id, field_title, style)
+    def select_daterange_received(
+        self, field_id, field_title, style=None, default_value=None
+    ):
+        return self._select_daterange(field_id, field_title, style, default_value)
 
     # @ram.cache(_cache_key_select_daterange)
     def select_daterange_published(self, field_id, field_title, style=None):

@@ -8,8 +8,12 @@
         <span i18n:translate="label_date_from">From</span>
       </td>
       <td>
-        <tal:date tal:define="input_name string:${view/field_id}_fromdate;">
-          <input type="date" tal:attributes="name input_name;"/>
+        <tal:date tal:define="input_name string:${view/field_id}_fromdate;
+                              default_value string:${view/default_value}">
+          <input tal:condition="default_value"
+                 type="date" tal:attributes="name input_name; value default_value"/>
+          <input tal:condition="not: default_value"
+            type="date" tal:attributes="name input_name;"/>
         </tal:date>
       </td>
     </tr>
