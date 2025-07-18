@@ -3,8 +3,8 @@
 ###
 class D3LinePlotter
   constructor: (@container, @options = {}) ->
-    @width = @options.width || 800
-    @height = @options.height || 490
+    @width = @options.width || 700
+    @height = @options.height || 500
     @margin = @options.margin || { top: 20, right: 70, bottom: 100, left: 50 }
     @innerWidth = @width - @margin.left - @margin.right
     @innerHeight = @height - @margin.top - @margin.bottom
@@ -207,7 +207,7 @@ class D3LinePlotter
       .attr('class', 'axis-label')
       .attr('transform', "translate(#{@innerWidth / 2}, #{@innerHeight + @margin.bottom})")
       .style('text-anchor', 'middle')
-      .attr('y', 5)
+      .attr('y', 0)
       .text('Time')
 
   drawHorizontalLines: (hlinesLeft, hlinesRight) ->

@@ -232,8 +232,8 @@
         el,
         {
           width: 700,
-          height: 490,
-          margin: { top: 60, right: 80, bottom: 60, left: 60 }
+          height: 600,
+          margin: { top: 20, right: 70, bottom: 80, left: 60 }
         });
 
       console.log('call renderForPDF');

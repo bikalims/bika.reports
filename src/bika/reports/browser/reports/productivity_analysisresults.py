@@ -115,53 +115,58 @@ class Report(BrowserView):
             plot_points.append({"x": data_point[1], "y": data_point[2]})
             total_count += 1
 
-        query = dict(
-            portal_type="Analysis", sort_on="getDateReceived", sort_order="ascending"
-        )
-        # filter by Secondary Service UID
-        self.add_filter_by_secondservice(query=query, out_params=parms)
-
-        # filter by specification uid
-        self.add_filter_by_specification(query=query, out_params=parms)
-
-        #  # filter by analyst
-        #  self.add_filter_by_analyst(query=query, out_params=parms)
-
-        # filter by date range
-        self.add_filter_by_date_range(query=query, out_params=parms)
-
-        # Filter by SampleType
-        self.add_filter_by_sampletype(query=query, out_params=parms)
-
-        # Fetch the data
-        logger.info("Select analysis-results query: {}".format(query))
-        analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
-        logger.info("Select analysis-results found {} results".format(len(analyses)))
         second_plot_points = []
-        for analysis in analyses:
-            analysis = api.get_object(analysis)
-            if not analysis.getResult():
-                continue
-            # HACK
-            # TODO - using Sample date for testing - change to getDateReceived
-            data_point = [
-                {
-                    "value": analysis.Title(),
-                    "class": "text",
-                },
-                {
-                    # "value": str(analysis.getDateReceived())[:16],
-                    "value": str(analysis.getDateSampled())[:16],
-                    "class": "date",
-                },
-                {
-                    "value": analysis.getResult(),
-                    "class": "float",
-                },
-            ]
-            data_lines.append(data_point)
-            second_plot_points.append({"x": data_point[1], "y": data_point[2]})
-            total_count += 1
+        if self.request.form.get("SecondServiceUID"):
+            query = dict(
+                portal_type="Analysis",
+                sort_on="getDateReceived",
+                sort_order="ascending",
+            )
+            # filter by Secondary Service UID
+            self.add_filter_by_secondservice(query=query, out_params=parms)
+
+            # filter by specification uid
+            self.add_filter_by_specification(query=query, out_params=parms)
+
+            #  # filter by analyst
+            #  self.add_filter_by_analyst(query=query, out_params=parms)
+
+            # filter by date range
+            self.add_filter_by_date_range(query=query, out_params=parms)
+
+            # Filter by SampleType
+            self.add_filter_by_sampletype(query=query, out_params=parms)
+
+            # Fetch the data
+            logger.info("Select analysis-results query: {}".format(query))
+            analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
+            logger.info(
+                "Select analysis-results found {} results".format(len(analyses))
+            )
+            for analysis in analyses:
+                analysis = api.get_object(analysis)
+                if not analysis.getResult():
+                    continue
+                # HACK
+                # TODO - using Sample date for testing - change to getDateReceived
+                data_point = [
+                    {
+                        "value": analysis.Title(),
+                        "class": "text",
+                    },
+                    {
+                        # "value": str(analysis.getDateReceived())[:16],
+                        "value": str(analysis.getDateSampled())[:16],
+                        "class": "date",
+                    },
+                    {
+                        "value": analysis.getResult(),
+                        "class": "float",
+                    },
+                ]
+                data_lines.append(data_point)
+                second_plot_points.append({"x": data_point[1], "y": data_point[2]})
+                total_count += 1
 
         if self.request.get("output_format", "") == "CSV":
             return self.generate_csv(data_lines)
@@ -187,7 +192,7 @@ class Report(BrowserView):
                     "left_axis_title": title,
                 }
             ]
-            if len(second_plot_points) and self.request.form.get("SecondServiceUID"):
+            if len(second_plot_points):
                 second_title = api.get_object(
                     self.request.form.get("SecondServiceUID")
                 ).title
@@ -210,51 +215,18 @@ class Report(BrowserView):
                 spec = api.get_object(self.request.form.get("spec"))
                 results_range = spec.getResultsRange()
                 if results_range:
-                    an_range = []
-                    for ar in results_range:
-                        logger.info(
-                            "ResultsRange: looking at {} for matching analysis {}".format(
-                                ar["keyword"], analysis.getKeyword()
-                            )
-                        )
-                        if ar["keyword"] == analysis.getKeyword():
-                            an_range.append(ar)
-                    logger.info(
-                        "ResultsRange: found {} for analysis {}".format(
-                            len(an_range), analysis.Title()
-                        )
+                    plot_data.extend(
+                        self.get_hline_plot_data(results_range, "ServiceUID")
                     )
-                    if an_range:
-                        an_range = an_range[0]
-                        spec_min = an_range.get("min")
-                        if spec_min:
-                            plot_data.append(
-                                {
-                                    "plot_color": "green",
-                                    "plot_type": "hline",
-                                    "show_points": False,
-                                    "plot_points": [
-                                        {
-                                            "y": {"type": "float", "value": spec_min},
-                                        },
-                                    ],
-                                }
+                    if self.request.form.get("SecondServiceUID"):
+                        plot_data.extend(
+                            self.get_hline_plot_data(
+                                results_range,
+                                "ServiceUID",
+                                y_axis="right",
+                                plot_color="blue",
                             )
-                        spec_max = an_range.get("max")
-                        if spec_max:
-                            plot_data.append(
-                                {
-                                    "plot_color": "green",
-                                    "plot_type": "hline",
-                                    "show_points": False,
-                                    "plot_points": [
-                                        {
-                                            "y": {"type": "float", "value": spec_max},
-                                        },
-                                    ],
-                                }
-                            )
-
+                        )
             self.plot_data = json.dumps(plot_data)
             logger.info("Plot: {}".format(self.plot_data))
 
@@ -279,6 +251,59 @@ class Report(BrowserView):
             "report_parms": self.request.form,
             "plot_data": self.plot_data,
         }
+
+    def get_hline_plot_data(
+        self, results_range, service_fieldname, y_axis="left", plot_color="red"
+    ):
+        plot_data = []
+        service = api.get_object(self.request.form.get(service_fieldname))
+        an_range = []
+        for ar in results_range:
+            logger.info(
+                "ResultsRange: looking at {} for matching service {}".format(
+                    ar["keyword"], service.getKeyword()
+                )
+            )
+            if ar["keyword"] == service.getKeyword():
+                an_range.append(ar)
+        logger.info(
+            "ResultsRange: found {} for service {}".format(
+                len(an_range), service.Title()
+            )
+        )
+        if an_range:
+            an_range = an_range[0]
+            spec_min = an_range.get("min")
+            if spec_min:
+                plot_data.append(
+                    {
+                        "plot_color": plot_color,
+                        "plot_type": "hline",
+                        "y_axis": y_axis,
+                        "show_points": False,
+                        "plot_points": [
+                            {
+                                "y": {"type": "float", "value": spec_min},
+                            },
+                        ],
+                    }
+                )
+            spec_max = an_range.get("max")
+            if spec_max:
+                plot_data.append(
+                    {
+                        "plot_color": plot_color,
+                        "plot_type": "hline",
+                        "y_axis": y_axis,
+                        "show_points": False,
+                        "plot_points": [
+                            {
+                                "y": {"type": "float", "value": spec_max},
+                            },
+                        ],
+                    }
+                )
+        return plot_data
 
     def add_filter_by_service(self, query, out_params):
         if not self.request.form.get("ServiceUID", ""):

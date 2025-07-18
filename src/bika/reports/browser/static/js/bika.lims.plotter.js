@@ -8,8 +8,8 @@
     constructor(container, options = {}) {
       this.container = container;
       this.options = options;
-      this.width = this.options.width || 800;
-      this.height = this.options.height || 490;
+      this.width = this.options.width || 700;
+      this.height = this.options.height || 500;
       this.margin = this.options.margin || {
         top: 20,
         right: 70,
@@ -220,7 +220,7 @@
       if (data.hasRightPlot && this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
         this.g.append('text').attr('class', 'axis-label-right').attr('transform', 'rotate(-90)').attr('y', this.innerWidth + this.margin.right - 30).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('fill', data.rightAxisColor).style('text-anchor', 'middle').text(data.rightAxisTitle);
       }
-      return this.g.append('text').attr('class', 'axis-label').attr('transform', `translate(${this.innerWidth / 2}, ${this.innerHeight + this.margin.bottom})`).style('text-anchor', 'middle').attr('y', 5).text('Time');
+      return this.g.append('text').attr('class', 'axis-label').attr('transform', `translate(${this.innerWidth / 2}, ${this.innerHeight + this.margin.bottom})`).style('text-anchor', 'middle').attr('y', 0).text('Time');
     }
 
     drawHorizontalLines(hlinesLeft, hlinesRight) {
