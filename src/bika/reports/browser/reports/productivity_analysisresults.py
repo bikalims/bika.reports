@@ -56,9 +56,10 @@ class Report(BrowserView):
 
     def __call__(self):
         parms = []
-        # HACK - which sort data
         query = dict(
-            portal_type="Analysis", sort_on="getDateReceived", sort_order="ascending"
+            portal_type="Analysis",
+            sort_on="getResultCaptureDate",
+            sort_order="ascending",
         )
         # # HACK testing
         # analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
@@ -94,16 +95,13 @@ class Report(BrowserView):
             analysis = api.get_object(analysis)
             if not analysis.getResult():
                 continue
-            # HACK
-            # TODO - using Sample date for testing - change to getDateReceived
             data_point = [
                 {
                     "value": analysis.Title(),
                     "class": "text",
                 },
                 {
-                    # "value": str(analysis.getdatereceived())[:16],
-                    "value": str(analysis.getDateSampled())[:16],
+                    "value": str(analysis.getResultCaptureDate())[:16],
                     "class": "date",
                 },
                 {
@@ -119,7 +117,7 @@ class Report(BrowserView):
         if self.request.form.get("SecondServiceUID"):
             query = dict(
                 portal_type="Analysis",
-                sort_on="getDateReceived",
+                sort_on="getResultCaptureDate",
                 sort_order="ascending",
             )
             # filter by Secondary Service UID
@@ -147,16 +145,13 @@ class Report(BrowserView):
                 analysis = api.get_object(analysis)
                 if not analysis.getResult():
                     continue
-                # HACK
-                # TODO - using Sample date for testing - change to getDateReceived
                 data_point = [
                     {
                         "value": analysis.Title(),
                         "class": "text",
                     },
                     {
-                        # "value": str(analysis.getDateReceived())[:16],
-                        "value": str(analysis.getDateSampled())[:16],
+                        "value": str(analysis.getResultCaptureDate())[:16],
                         "class": "date",
                     },
                     {
@@ -371,14 +366,14 @@ class Report(BrowserView):
         )
 
     def add_filter_by_date_range(self, query, out_params):
-        date_query = formatDateQuery(self.context, "Received")
+        date_query = formatDateQuery(self.context, "DateResultCapture")
         if not date_query:
             return
-        query["getDateReceived"] = date_query
+        query["getResultCaptureDate"] = date_query
         out_params.append(
             {
-                "title": _("Received"),
-                "value": formatDateParms(self.context, "AR_DateReceived"),
+                "title": _("Date Result Captured"),
+                "value": formatDateParms(self.context, "AR_ResultCaptureDate"),
                 "type": "text",
             }
         )

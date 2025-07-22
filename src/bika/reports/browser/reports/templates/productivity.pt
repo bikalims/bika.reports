@@ -323,9 +323,9 @@
                   <fieldset>
                     <tal:x define="default view/last_month"
                            content="structure python:view.selection_macros.select_daterange_received(
-                                    field_id='Received',
+                                    field_id='DateResultCapture',
                                     default_value=default,
-                                    field_title='Date Received')"/>
+                                    field_title='Date Result Captured')"/>
                   </fieldset>
                   <div tal:content="structure context/@@selection_macros/select_output_format" hidden/>
                   <input tabindex=""
