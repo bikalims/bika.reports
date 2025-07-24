@@ -30,7 +30,7 @@ from bika.lims import api
 from bika.lims import bikaMessageFactory as _
 from bika.lims.browser import BrowserView
 from bika.lims.catalog.analysis_catalog import CATALOG_ANALYSIS_LISTING
-from bika.lims.utils import formatDateQuery, formatDateParms
+from bika.lims.utils import formatDateQuery, formatDateParms, logged_in_client
 from plone.app.layout.globals.interfaces import IViewView
 from senaite.core.i18n import translate as t
 from senaite.core import logger
@@ -79,6 +79,9 @@ class Report(BrowserView):
             sort_on="getResultCaptureDate",
             sort_order="ascending",
         )
+        # Filter by Client
+        self.add_filter_by_client(query=query, out_params=parms)
+
         # Filter by Service UID
         self.add_filter_by_service(query=query, out_params=parms)
 
@@ -155,6 +158,9 @@ class Report(BrowserView):
                 sort_on="getResultCaptureDate",
                 sort_order="ascending",
             )
+            # Filter by Client
+            self.add_filter_by_client(query=query, out_params=parms)
+
             # filter by Secondary Service UID
             self.add_filter_by_secondservice(query=query, out_params=parms)
 
@@ -334,14 +340,14 @@ class Report(BrowserView):
         service = api.get_object(self.request.form.get(service_fieldname))
         an_range = []
         for ar in results_range:
-            logger.info(
+            logger.debug(
                 "ResultsRange: looking at {} for matching service {}".format(
                     ar["keyword"], service.getKeyword()
                 )
             )
             if ar["keyword"] == service.getKeyword():
                 an_range.append(ar)
-        logger.info(
+        logger.debug(
             "ResultsRange: found {} for service {}".format(
                 len(an_range), service.Title()
             )
@@ -379,6 +385,18 @@ class Report(BrowserView):
                     }
                 )
         return plot_data
+
+    def add_filter_by_client(self, query, out_params):
+        """Applies the filter by client to the search query"""
+        current_client = logged_in_client(self.context)
+        if current_client:
+            query["getClientUID"] = api.get_uid(current_client)
+        elif self.request.form.get("ClientUID", ""):
+            query["getClientUID"] = self.request.form["ClientUID"]
+            client = api.get_object_by_uid(query["getClientUID"])
+            out_params.append(
+                {"title": _("Client"), "value": client.Title(), "type": "text"}
+            )
 
     def add_filter_by_service(self, query, out_params):
         if not self.request.form.get("ServiceUID", ""):
