@@ -84,16 +84,13 @@
             <metal:block tal:repeat="line datalines">
                 <tr>
                     <tal:column repeat="i python:range(len(line))">
-                        <td class="" colspan="" tal:define="
-                                img_before python:line[i].has_key('img_before')
-                                and line[i]['img_before'] or None;
-                                img_after python:line[i].has_key('img_after')
-                                and line[i]['img_after'] or None;
-                                colspan python:line[i].has_key('colspan')
-                                and line[i]['colspan'] or 1;
-                                class python:line[i].has_key('class')
-                                and line[i]['class'] or None;"
-                                tal:attributes="
+                        <td class="" colspan=""
+                              tal:define="
+                                img_before python:line[i].get('img_before', None);
+                                img_after python:line[i].get('img_after', None);
+                                colspan python:line[i].get('colspan', 1);
+                                class python:line[i].get('class')"
+                             tal:attributes="
                                 class class;
                                 colspan colspan">
                             <tal:img tal:condition="img_before">

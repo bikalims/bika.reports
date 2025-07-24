@@ -58,8 +58,16 @@ class Report(BrowserView):
             "sample_point": "",
         }
         self.formats = {
-            "columns": 3,
-            "col_heads": [_("Analysis"), _("Date"), _("Result")],
+            "columns": 7,
+            "col_heads": [
+                _("Analysis"),
+                _("Date"),
+                _("Result"),
+                _("Sample ID"),
+                _("Client"),
+                _("Sample Point"),
+                _("Sample Type"),
+            ],
             "class": "",
         }
         self.plot_enabled = True
@@ -90,9 +98,7 @@ class Report(BrowserView):
         self.add_filter_by_sampletype(query=query, out_params=parms)
 
         # Fetch the data
-        data_lines = [
-            [{"class": "category_heading", "colspan": 3, "value": "Results"}],
-        ]
+        data_lines = []
         total_count = 0
         logger.info("Select analysis-results query: {}".format(query))
         analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
@@ -102,6 +108,12 @@ class Report(BrowserView):
             analysis = api.get_object(analysis)
             if not analysis.getResult():
                 continue
+            sample_point = ""
+            if analysis.getSamplePoint():
+                sample_point = analysis.getSamplePoint().Title()
+            sample_type = ""
+            if analysis.getSampleType():
+                sample_type = analysis.getSampleType().Title()
             data_point = [
                 {
                     "value": analysis.Title(),
@@ -114,6 +126,22 @@ class Report(BrowserView):
                 {
                     "value": analysis.getResult(),
                     "class": "float",
+                },
+                {
+                    "value": analysis.aq_parent.Title(),
+                    "class": "text",
+                },
+                {
+                    "value": analysis.getClient().Title(),
+                    "class": "text",
+                },
+                {
+                    "value": sample_point,
+                    "class": "text",
+                },
+                {
+                    "value": sample_type,
+                    "class": "text",
                 },
             ]
             data_lines.append(data_point)
@@ -152,6 +180,12 @@ class Report(BrowserView):
                 analysis = api.get_object(analysis)
                 if not analysis.getResult():
                     continue
+            sample_point = ""
+            if analysis.getSamplePoint():
+                sample_point = analysis.getSamplePoint().Title()
+            sample_type = ""
+            if analysis.getSampleType():
+                sample_type = analysis.getSampleType().Title()
                 data_point = [
                     {
                         "value": analysis.Title(),
@@ -164,6 +198,22 @@ class Report(BrowserView):
                     {
                         "value": analysis.getResult(),
                         "class": "float",
+                    },
+                    {
+                        "value": analysis.aq_parent.Title(),
+                        "class": "text",
+                    },
+                    {
+                        "value": analysis.getClient().Title(),
+                        "class": "text",
+                    },
+                    {
+                        "value": sample_point,
+                        "class": "text",
+                    },
+                    {
+                        "value": sample_type,
+                        "class": "text",
                     },
                 ]
                 data_lines.append(data_point)
@@ -185,17 +235,17 @@ class Report(BrowserView):
         heading += " Results {}".format(self.date.strftime("%B %Y"))
         self.headings["header"] = heading
 
-        # ParamHeading
-        param_heading = ""
-        if self.headings["analysis"]:
-            param_heading += " {} {}".format(
-                self.headings["analysis"], self.headings["analysis_unit"]
-            )
-        if self.headings["second_analysis"]:
-            param_heading += ", {} {}".format(
-                self.headings["second_analysis"], self.headings["second_analysis_unit"]
-            )
-        self.headings["paramheader"] = param_heading
+        # # ParamHeading
+        # param_heading = ""
+        # if self.headings["analysis"]:
+        #     param_heading += " {} {}".format(
+        #         self.headings["analysis"], self.headings["analysis_unit"]
+        #     )
+        # if self.headings["second_analysis"]:
+        #     param_heading += ", {} {}".format(
+        #         self.headings["second_analysis"], self.headings["second_analysis_unit"]
+        #     )
+        # self.headings["paramheader"] = param_heading
         self.report_content = {
             "headings": self.headings,
             "parms": parms,
