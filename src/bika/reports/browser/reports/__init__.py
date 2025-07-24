@@ -36,49 +36,12 @@ from bika.lims.browser import BrowserView
 from bika.lims.browser.bika_listing import BikaListingView
 from bika.lims.utils import getUsers
 from bika.lims.utils import logged_in_client
+from bika.lims.utils import createPdf
 from bika.reports import _
 from bika.reports.browser.reports.selection_macros import SelectionMacrosView
 from bika.reports.interfaces import IAdministrationReport
 from bika.reports.interfaces import IProductivityReport
 from senaite.core.catalog import REPORT_CATALOG
-
-from bika.lims.utils import createPdf
-import requests
-
-
-def newCreatePdf(html_content):
-
-    # with open("/home/mike/Downloads/original.html", "wb") as f:
-    #     f.write(html_content)
-    # print("HTML successfully saved as 'original.html'.")
-
-    # test_html = "<h1>Hello, Me!</h1><p>This is a PDF generated from HTML.</p>"
-    url = "http://localhost:3010/generate-pdf"
-    payload = {"htmlContent": html_content}
-    result = ""
-    try:
-        # Send the POST request to the service
-        response = requests.post(url, json=payload)
-
-        # Check if the request was successful
-        if response.status_code == 200:
-            result = response.content
-            # # Save the PDF to a file
-            # with open("/home/mike/Dowloads/generated.pdf", "wb") as f:
-            #     f.write(response.content)
-            # print("PDF generated successfully and saved as 'generated.pdf'.")
-        else:
-            print(
-                "Failed to generate PDF: "
-                + response.status_code
-                + " text: "
-                + response.text
-            )
-
-    except Exception as e:
-        print("An error occurred: " + str(e))
-
-    return result
 
 
 class ProductivityView(BrowserView):
@@ -349,10 +312,12 @@ class SubmitForm(BrowserView):
         # self.logger.info("SubmitForm: report_parms: {}".format(self.report_parms))
         # self.logger.info("SubmitForm: framed_output: {}".format(framed_output))
 
+        # NB: The output_format can be hidden on the form with no value!
         if len(self.request.get("output_format", "")) == 0:
             self.logger.info("SubmitForm: exit with framed_output")
             return framed_output
 
+        # pdf = createPdf(framed_output)
         parser = bs4.BeautifulSoup(framed_output, "html.parser")
         for el in parser.find_all("form"):
             el.decompose()

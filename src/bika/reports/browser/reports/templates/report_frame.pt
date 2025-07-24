@@ -12,12 +12,13 @@
           class="controls" action="createreport" method="post"
           tal:attributes="action python:'{}/createreport?{}'.format(here.absolute_url(), report_parms)">
       <div align="center">
+        <h1>Report Preview</h1>
         <input type="hidden" name="bika-report-plot" class="bika-report-plot" tal:attributes="data-report-content view/plot_data"/>
         <button type="button" onclick="history.back();">Back</button>
         <button type="submit" name="PDF">Save to PDF</button>
       </div>
     </form>
-    <table class="header_table">
+    <table class="header_table" tal:condition="not: report_parms">
       <tr>
         <td class="left">
           <span tal:content="view/client_title | nothing"/>

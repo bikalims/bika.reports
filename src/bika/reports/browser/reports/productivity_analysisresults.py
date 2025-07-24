@@ -23,6 +23,7 @@ import csv
 import datetime
 import json
 
+import DateTime
 from six import StringIO
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from bika.lims import api
@@ -43,9 +44,18 @@ class Report(BrowserView):
     def __init__(self, context, request, report=None):
         BrowserView.__init__(self, context, request)
         self.report = report
+        self.date = DateTime.DateTime()
+        today = self.date.strftime("%Y-%m-%d")
+        username = self.context.portal_membership.getAuthenticatedMember().getUserName()
         self.headings = {
             "header": _("Analysis Results"),
-            "subheader": _("The results of an analysis plotted over time"),
+            "subheader": _("Create on {} by {}".format(today, username)),
+            "paramheader": "",
+            "analysis": "",
+            "analysis_unit": "",
+            "second_analysis": "",
+            "second_analysis_unit": "",
+            "sample_point": "",
         }
         self.formats = {
             "columns": 3,
@@ -61,17 +71,14 @@ class Report(BrowserView):
             sort_on="getResultCaptureDate",
             sort_order="ascending",
         )
-        # # HACK testing
-        # analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
-        # logger.info("Select analysis-results found {} results".format(len(analyses)))
-        # for analysis in analyses:
-        #     logger.info("Select analysis-results {} ".format(analysis.getServiceUID))
-
         # Filter by Service UID
         self.add_filter_by_service(query=query, out_params=parms)
 
         # Filter by Specification UID
         self.add_filter_by_specification(query=query, out_params=parms)
+
+        # Filter by SamplePoint
+        self.add_filter_by_samplepoint(query=query, out_params=parms)
 
         # # Filter by Analyst
         # self.add_filter_by_analyst(query=query, out_params=parms)
@@ -166,6 +173,29 @@ class Report(BrowserView):
         if self.request.get("output_format", "") == "CSV":
             return self.generate_csv(data_lines)
 
+        # Rework headings
+        # Heading
+        heading = ""
+        if self.headings["sample_point"]:
+            heading += "{}".format(self.headings["sample_point"])
+        if self.headings["analysis"]:
+            heading += " {}".format(self.headings["analysis"])
+        if self.headings["second_analysis"]:
+            heading += " and {}".format(self.headings["second_analysis"])
+        heading += " Results {}".format(self.date.strftime("%B %Y"))
+        self.headings["header"] = heading
+
+        # ParamHeading
+        param_heading = ""
+        if self.headings["analysis"]:
+            param_heading += " {} {}".format(
+                self.headings["analysis"], self.headings["analysis_unit"]
+            )
+        if self.headings["second_analysis"]:
+            param_heading += ", {} {}".format(
+                self.headings["second_analysis"], self.headings["second_analysis_unit"]
+            )
+        self.headings["paramheader"] = param_heading
         self.report_content = {
             "headings": self.headings,
             "parms": parms,
@@ -305,44 +335,56 @@ class Report(BrowserView):
             return
         query["getServiceUID"] = self.request.form["ServiceUID"]
         service = api.get_object_by_uid(query["getServiceUID"])
-        out_params.append(
-            {"title": _("Analysis Service"), "value": service.Title(), "type": "text"}
-        )
+        self.headings["analysis"] = service.Title()
+        self.headings["analysis_unit"] = service.getUnit()
+        # out_params.append(
+        #     {"title": _("Analysis"), "value": service.Title(), "type": "text"}
+        # )
 
     def add_filter_by_secondservice(self, query, out_params):
         if not self.request.form.get("SecondServiceUID", ""):
             return
         query["getServiceUID"] = self.request.form["SecondServiceUID"]
         service = api.get_object_by_uid(query["getServiceUID"])
-        out_params.append(
-            {"title": _("Analysis Service"), "value": service.Title(), "type": "text"}
-        )
+        self.headings["second_analysis"] = service.Title()
+        self.headings["second_analysis_unit"] = service.getUnit()
+        # # out_params.append(
+        # #     {"title": _("Second Analysis"), "value": service.Title(), "type": "text"}
+        # # )
 
     def add_filter_by_specification(self, query, out_params):
         if not self.request.form.get("spec", ""):
             return
         query["getSpecificationUID"] = self.request.form["spec"]
         spec = api.get_object_by_uid(query["getSpecificationUID"])
-        out_params.append(
-            {
-                "title": _("Analysis Specification"),
-                "value": spec.Title(),
-                "type": "text",
-            }
-        )
+        if (
+            len([param for param in out_params if param["title"] != _("Specification")])
+            == 0
+        ):
+            out_params.append(
+                {
+                    "title": _("Specification"),
+                    "value": spec.Title(),
+                    "type": "text",
+                }
+            )
 
     def add_filter_by_sampletype(self, query, out_params):
         if not self.request.form.get("SampleTypeUID", ""):
             return
         query["getSampleTypeUID"] = self.request.form["SampleTypeUID"]
         sampletype = api.get_object_by_uid(query["getSampleTypeUID"])
-        out_params.append(
-            {
-                "title": _("SampleTypeUID"),
-                "value": sampletype.Title(),
-                "type": "text",
-            }
-        )
+        if (
+            len([param for param in out_params if param["title"] == _("Sample Type")])
+            == 0
+        ):
+            out_params.append(
+                {
+                    "title": _("Sample Type"),
+                    "value": sampletype.Title(),
+                    "type": "text",
+                }
+            )
 
     def add_filter_by_analyst(self, query, out_params):
         if not self.request.form.get("Analyst", ""):
@@ -355,6 +397,24 @@ class Report(BrowserView):
                 "type": "text",
             }
         )
+
+    def add_filter_by_samplepoint(self, query, out_params):
+        if not self.request.form.get("SamplePointUID", ""):
+            return
+        query["getSamplePointUID"] = self.request.form["SamplePointUID"]
+        sample_point = api.get_object_by_uid(query["getSamplePointUID"])
+        if (
+            len([param for param in out_params if param["title"] == _("Sample Point")])
+            == 0
+        ):
+            out_params.append(
+                {
+                    "title": _("Sample Point"),
+                    "value": sample_point.Title(),
+                    "type": "text",
+                }
+            )
+        self.headings["sample_point"] = sample_point.Title()
 
     def add_filter_by_instrument(self, query, out_params):
         if not self.request.form.get("getInstrumentUID", ""):
@@ -370,13 +430,17 @@ class Report(BrowserView):
         if not date_query:
             return
         query["getResultCaptureDate"] = date_query
-        out_params.append(
-            {
-                "title": _("Date Result Captured"),
-                "value": formatDateParms(self.context, "AR_ResultCaptureDate"),
-                "type": "text",
-            }
-        )
+        if (
+            len([param for param in out_params if param["title"] == _("Analyized")])
+            == 0
+        ):
+            out_params.append(
+                {
+                    "title": _("Analyized"),
+                    "value": formatDateParms(self.context, "DateResultCapture"),
+                    "type": "text",
+                }
+            )
 
     def generate_csv(self, data_lines):
         fieldnames = [
