@@ -29,7 +29,7 @@ from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from bika.lims import api
 from bika.lims import bikaMessageFactory as _
 from bika.lims.browser import BrowserView
-from bika.lims.catalog.analysis_catalog import CATALOG_ANALYSIS_LISTING
+from senaite.core.catalog import ANALYSIS_CATALOG
 from bika.lims.utils import formatDateQuery, formatDateParms, logged_in_client
 from plone.app.layout.globals.interfaces import IViewView
 from senaite.core.i18n import translate as t
@@ -104,7 +104,7 @@ class Report(BrowserView):
         data_lines = []
         total_count = 0
         logger.info("Select analysis-results query: {}".format(query))
-        analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
+        analyses = api.search(query, ANALYSIS_CATALOG)
         logger.info("Select analysis-results found {} results".format(len(analyses)))
         plot_points = []
         for analysis in analyses:
@@ -178,7 +178,7 @@ class Report(BrowserView):
 
             # Fetch the data
             logger.info("Select analysis-results query: {}".format(query))
-            analyses = api.search(query, CATALOG_ANALYSIS_LISTING)
+            analyses = api.search(query, ANALYSIS_CATALOG)
             logger.info(
                 "Select analysis-results found {} results".format(len(analyses))
             )
@@ -288,13 +288,13 @@ class Report(BrowserView):
                         "right_axis_title": second_title,
                     }
                 )
-            if self.request.form.get("spec", ""):
+            if self.request.form.get("analysis_spec", ""):
                 # get specification for analaysis
                 # find upper and lower limits
                 # create hlines for them
                 # append to plot_data
-                spec = api.get_object(self.request.form.get("spec"))
-                results_range = spec.getResultsRange()
+                analysis_spec = api.get_object(self.request.form.get("analysis_spec"))
+                results_range = analysis_spec.getResultsRange()
                 if results_range:
                     plot_data.extend(
                         self.get_hline_plot_data(results_range, "ServiceUID")
@@ -421,10 +421,10 @@ class Report(BrowserView):
         # # )
 
     def add_filter_by_specification(self, query, out_params):
-        if not self.request.form.get("spec", ""):
+        if not self.request.form.get("analysis_spec", ""):
             return
-        query["getSpecificationUID"] = self.request.form["spec"]
-        spec = api.get_object_by_uid(query["getSpecificationUID"])
+        query["getAnalysisSpecUID"] = self.request.form["analysis_spec"]
+        analysis_spec = api.get_object_by_uid(query["getAnalysisSpecUID"])
         if (
             len([param for param in out_params if param["title"] != _("Specification")])
             == 0
@@ -432,7 +432,7 @@ class Report(BrowserView):
             out_params.append(
                 {
                     "title": _("Specification"),
-                    "value": spec.Title(),
+                    "value": analysis_spec.Title(),
                     "type": "text",
                 }
             )

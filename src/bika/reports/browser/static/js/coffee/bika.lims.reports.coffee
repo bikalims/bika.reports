@@ -99,7 +99,7 @@ class window.ReportFolderView
          result = me.call_command(command)
          result.then (data) ->
             console.log('Items returned: ' + data.items.length)
-            me.populate_dropdown('#spec', data.items, clear=true, add_empty=true)
+            me.populate_dropdown('#analysis_spec', data.items, clear=true, add_empty=true)
 
             command = 'search?portal_type=AnalysisService'
             result = me.call_command(command)
@@ -134,7 +134,7 @@ class window.ReportFolderView
             result = me.call_command(command)
             result.then (data) ->
                console.log('Items returned: ' + data.items.length)
-               me.populate_dropdown('#spec', data.items, clear=true, add_empty=true)
+               me.populate_dropdown('#analysis_spec', data.items, clear=true, add_empty=true)
 
                command = 'search?portal_type=AnalysisService'
                result = me.call_command(command)
@@ -156,7 +156,7 @@ class window.ReportFolderView
      result = me.call_command(command)
      result.then (data) ->
         console.log('Items returned: ' + data.items.length)
-        me.populate_dropdown('#spec', data.items, clear=true, add_empty=true)
+        me.populate_dropdown('#analysis_spec', data.items, clear=true, add_empty=true)
 
         command = 'search?portal_type=AnalysisService'
         result = me.call_command(command)
@@ -223,8 +223,8 @@ class window.ReportFolderView
       selected_sample_type = $(e.target).val()
       @sample_type_selected selected_sample_type
 
-    if e.target.id == 'spec'
-      console.log 'spec selected'
+    if e.target.id == 'analysis_spec'
+      console.log 'analysis_spec selected'
       selected_analysis_spec = $(e.target).val()
       @analysis_spec_selected selected_analysis_spec
 

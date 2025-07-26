@@ -44,6 +44,8 @@
       name="bika.reports-hiddenprofiles"
       />
 
-  <!-- -*- extra stuff goes here -*- -->
+
+  <adapter name="getSamplePointUID" factory=".indexers.getSamplePointUID" />
+  <adapter name="getAnalysisSpecUID" factory=".indexers.getAnalysisSpecUID" />
 
 </configure>

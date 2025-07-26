@@ -1,23 +1,23 @@
 <div class="field" i18n:domain="senaite.core" tal:attributes="style view/style|nothing">
 
-  <label for="spec" i18n:translate="label_specification">Specification</label>
+  <label for="analysis_spec" i18n:translate="label_specification">Specification</label>
 
   <tal:specs>
-    <select id="spec" 
+    <select id="analysis_spec" 
           class="form-control form-control-sm"
-          name="spec">
+          name="analysis_spec">
       <option tal:condition="python:view.allow_blank" value=""/>
-      <tal:x repeat="spec view/specs">
-        <option tal:condition="python:not (request.get('spec', None) and request.get('spec', None) == spec['uid'])"
-                tal:attributes="value spec/uid;"
-                tal:content="spec/title"></option>
-        <option tal:condition="python:not (request.get('spec', None) and request.get('spec', None) == spec['uid'])"
-                tal:attributes="value spec/uid;"
-                tal:content="spec/title"></option>
-        <option tal:condition="python:request.get('spec', None) and request.get('spec', None) == spec['uid']"
-                tal:attributes="value spec/uid;
+      <tal:x repeat="analysis_spec view/specs">
+        <option tal:condition="python:not (request.get('analysis_spec', None) and request.get('analysis_spec', None) == analysis_spec['uid'])"
+                tal:attributes="value analysis_spec/uid;"
+                tal:content="analysis_spec/title"></option>
+        <option tal:condition="python:not (request.get('analysis_spec', None) and request.get('analysis_spec', None) == analysis_spec['uid'])"
+                tal:attributes="value analysis_spec/uid;"
+                tal:content="analysis_spec/title"></option>
+        <option tal:condition="python:request.get('analysis_spec', None) and request.get('analysis_spec', None) == analysis_spec['uid']"
+                tal:attributes="value analysis_spec/uid;
                                selected string:selected;"
-                tal:content="spec/title"></option>
+                tal:content="analysis_spec/title"></option>
       </tal:x>
     </select>
   </tal:specs>
