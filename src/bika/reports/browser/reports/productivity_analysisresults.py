@@ -164,6 +164,9 @@ class Report(BrowserView):
             # filter by Secondary Service UID
             self.add_filter_by_secondservice(query=query, out_params=parms)
 
+            # Filter by SamplePoint
+            self.add_filter_by_samplepoint(query=query, out_params=parms)
+
             # filter by specification uid
             self.add_filter_by_specification(query=query, out_params=parms)
 
