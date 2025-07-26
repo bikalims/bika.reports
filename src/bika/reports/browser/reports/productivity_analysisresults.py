@@ -186,12 +186,12 @@ class Report(BrowserView):
                 analysis = api.get_object(analysis)
                 if not analysis.getResult():
                     continue
-            sample_point = ""
-            if analysis.getSamplePoint():
-                sample_point = analysis.getSamplePoint().Title()
-            sample_type = ""
-            if analysis.getSampleType():
-                sample_type = analysis.getSampleType().Title()
+                sample_point = ""
+                if analysis.getSamplePoint():
+                    sample_point = analysis.getSamplePoint().Title()
+                sample_type = ""
+                if analysis.getSampleType():
+                    sample_type = analysis.getSampleType().Title()
                 data_point = [
                     {
                         "value": analysis.Title(),
