@@ -18,14 +18,17 @@
 # Copyright 2018-2021 by it's authors.
 # Some rights reserved, see README and LICENSE.
 
+from Products.Archetypes.Field import StringField
 from Products.CMFCore.utils import getToolByName
-from zope.i18n import translate
-from bika.lims.browser import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
-from bika.lims.utils import getUsers
-from bika.lims import bikaMessageFactory as _
 from plone.memoize import ram
+from zope.i18n import translate
 from time import time
+
+from bika.lims import bikaMessageFactory as _
+from bika.lims.browser import BrowserView
+from senaite.core.browser.widgets import ReferenceWidget
+from bika.lims.utils import getUsers
 
 
 def update_timer():
@@ -217,6 +220,7 @@ class SelectionMacrosView(BrowserView):
 
         python:view.selection_macros.parse_analysisservice(allow_blank=False)
 
+
     The parse_ functions return {'contentFilter': (k,v),
                                  'parms': (k,v),
                                  'title': string
@@ -231,6 +235,7 @@ class SelectionMacrosView(BrowserView):
         self.bsc = self.senaite_catalog_setup
         self.pc = self.portal_catalog
         self.rc = self.reference_catalog
+        self.client_widget = None
 
     select_analysiscategory_pt = ViewPageTemplateFile("select_analysiscategory.pt")
 
@@ -330,11 +335,27 @@ class SelectionMacrosView(BrowserView):
 
     select_client_pt = ViewPageTemplateFile("select_client.pt")
 
+    # @ram.cache(_cache_key_select_client)
+    # def select_client(self, style=None):
+    #     self.style = style
+    #     self.clients = self.pc(portal_type="Client", sort_on="sortable_title")
+    #     return self.select_client_pt()
+
     @ram.cache(_cache_key_select_client)
     def select_client(self, style=None):
         self.style = style
-        self.clients = self.pc(portal_type="Client", sort_on="sortable_title")
+
+        widget = ReferenceWidget(
+            label="Client",
+            description="Search and select a client",
+            catalog_name="senaite_client_catalog",
+            base_query={"portal_type": "Client", "sort_on": "sortable_title"},
+        )
+        dummy_field = StringField("ClientUID")
+        self.client_widget = widget(self.request.get("ClientUID", ""), self.request)
+
         return self.select_client_pt()
+
 
     def parse_client(self, request):
         val = request.form.get("ClientUID", "")

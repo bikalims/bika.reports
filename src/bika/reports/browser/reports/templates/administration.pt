@@ -6,6 +6,7 @@
 
   <head>
     <metal:block fill-slot="head_slot">
+<link rel="stylesheet" href="++resource++bika.lims.styles/referencewidget.css" />
       <style media="screen" type="text/css">
        h2 {
          font-size: 1.1em;
@@ -79,6 +80,8 @@
       <script type="text/javascript"
               src="bika.lims.reports.js"
               tal:attributes="src string:${portal/absolute_url}/++plone++bika.reports/js/bika.lims.reports.js"></script>
+
+    <script type="text/javascript" src="++resource++bika.lims.referencewidget.js"></script>
 
     </metal:block>
   </head>
