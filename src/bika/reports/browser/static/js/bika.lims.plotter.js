@@ -29,6 +29,7 @@
         this.innerHeight,
         0 // Left Y-axis
       ]);
+      console.log('innerHeight: ' + this.innerHeight);
       this.yScaleRight = d3.scaleLinear().range([
         this.innerHeight,
         0 // Right Y-axis
@@ -106,6 +107,7 @@
         }
       }
       parsedData.hasRightPlot = parsedData.linesRight.length > 0 || parsedData.hlinesRight.length > 0;
+      console.log('hasRightPlot: ' + parsedData.hasRightPlot);
       return parsedData;
     }
 
@@ -213,10 +215,11 @@
         this.g.append('g').attr('class', 'y-axis-right').attr('transform', `translate(${this.innerWidth},0)`).call(d3.axisRight(this.yScaleRight).tickFormat(d3.format('.1f')));
       }
       
-      // Add axis labels
+      // Add left axis labels
       this.g.append('text').attr('class', 'axis-label-left').attr('transform', 'rotate(-90)').attr('y', 0 - this.margin.left).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('text-anchor', 'middle').style('fill', data.leftAxisColor).text(data.leftAxisTitle);
       
       // Right axis label (only if we have right-axis data)
+      console.log('Right Axis: ' + this.yScaleRight.domain()[0] + ' ' + this.yScaleRight.domain()[1]);
       if (data.hasRightPlot && this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
         this.g.append('text').attr('class', 'axis-label-right').attr('transform', 'rotate(-90)').attr('y', this.innerWidth + this.margin.right - 30).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('fill', data.rightAxisColor).style('text-anchor', 'middle').text(data.rightAxisTitle);
       }

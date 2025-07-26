@@ -21,6 +21,7 @@ class D3LinePlotter
     # Initialize scales
     @xScale = d3.scaleTime().range([0, @innerWidth])
     @yScale = d3.scaleLinear().range([@innerHeight, 0])  # Left Y-axis
+    console.log('innerHeight: ' + @innerHeight)
     @yScaleRight = d3.scaleLinear().range([@innerHeight, 0])  # Right Y-axis
     
     # Initialize line generators
@@ -89,6 +90,7 @@ class D3LinePlotter
           parsedData.hlinesLeft.push(hlineData)
     
     parsedData.hasRightPlot = parsedData.linesRight.length > 0 or parsedData.hlinesRight.length > 0
+    console.log('hasRightPlot: ' + parsedData.hasRightPlot)
     return parsedData
 
   getLineStylePattern: (style) ->
@@ -180,7 +182,7 @@ class D3LinePlotter
         .attr('transform', "translate(#{@innerWidth},0)")
         .call(d3.axisRight(@yScaleRight).tickFormat(d3.format('.1f')))
     
-    # Add axis labels
+    # Add left axis labels
     @g.append('text')
       .attr('class', 'axis-label-left')
       .attr('transform', 'rotate(-90)')
@@ -192,6 +194,7 @@ class D3LinePlotter
       .text(data.leftAxisTitle)
     
     # Right axis label (only if we have right-axis data)
+    console.log('Right Axis: ' + @yScaleRight.domain()[0] + ' ' + @yScaleRight.domain()[1])
     if data.hasRightPlot and @yScaleRight.domain()[0] isnt @yScaleRight.domain()[1]
       @g.append('text')
         .attr('class', 'axis-label-right')
