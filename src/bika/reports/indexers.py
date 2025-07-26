@@ -17,9 +17,8 @@ def getSamplePointUID(instance):
 
 @indexer(IAnalysis, IAnalysisCatalog)
 def getAnalysisSpecUID(instance):
-    logger.info("----------- getAnalysisSpecUID")
     sample = instance.aq_parent
     if sample.portal_type != "AnalysisRequest":
         return
-    logger.info("----------- Sample: {}".format(sample.getSpecification().UID()))
+    logger.debug("----------- Sample: {}".format(sample.getSpecification().UID()))
     return sample.getSpecification().UID()
