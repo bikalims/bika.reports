@@ -46,11 +46,11 @@ class Report(BrowserView):
         BrowserView.__init__(self, context, request)
         self.report = report
         self.date = DateTime.DateTime()
-        today = self.date.strftime("%Y-%m-%d")
+        today = self.date.strftime("%Y-%m-%d %H:%M")
         username = self.context.portal_membership.getAuthenticatedMember().getUserName()
         self.headings = {
             "header": _("Analysis Results"),
-            "subheader": _("Create on {} by {}".format(today, username)),
+            "subheader": _("Created on {} by {}".format(today, username)),
             "paramheader": "",
             "analysis": "",
             "analysis_unit": "",
