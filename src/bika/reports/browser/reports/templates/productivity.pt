@@ -100,6 +100,7 @@
 
       <div>
         <fieldset>
+          <!--
           <h2 i18n:translate="">Sample related reports</h2>
           <ul id="toc-reports">
 
@@ -166,6 +167,7 @@
               </div>
             </li>
           </ul>
+          -->
 
           <h2 i18n:translate="">Analyses related reports</h2>
           <ul id="toc-reports">
@@ -339,6 +341,7 @@
             </li>
 
             <!-- Analyses turnaround time -->
+            <!--
             <li>
               <a href="#" id="tats_selector"
                  i18n:translate="">Analysis turnaround time</a>
@@ -369,8 +372,10 @@
                 </form>
               </div>
             </li>
+            -->
 
             <!-- Analyses turnaround time over time -->
+            <!--
             <li tal:condition="not:here/member_is_client">
               <a href="#" id="tats_overtime_selector"
                  i18n:translate="">Analysis turnaround time over time</a>
@@ -406,8 +411,10 @@
                 </form>
               </div>
             </li>
+            -->
 
             <!-- Analyses by lab department -->
+            <!--
             <li>
               <a href="#" id="analysesperdepartment_selector"
                  i18n:translate="">Analyses summary per department</a>
@@ -445,7 +452,9 @@
               </div>
             </li>
 
+            -->
             <!-- Analyses perfomed as % of total -->
+            <!--
             <li>
               <a href="#" id="analysesperformedpertotal_selector"
                  i18n:translate="">Analyses performed and published as % of total</a>
@@ -479,8 +488,10 @@
                 </form>
               </div>
             </li>
+            -->
           </ul>
 
+          <!--
           <h2 style="font-size:1.1em;margin:15px 0px;" i18n:translate="">Other productivity
             reports</h2>
           <ul id="toc-reports">
@@ -575,6 +586,7 @@
             </li>
 
           </ul>
+          -->
         </fieldset>
       </div>
     </metal:content-core>

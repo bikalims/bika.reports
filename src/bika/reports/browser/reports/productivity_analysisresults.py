@@ -31,6 +31,7 @@ from bika.lims import bikaMessageFactory as _
 from bika.lims.browser import BrowserView
 from senaite.core.catalog import ANALYSIS_CATALOG
 from bika.lims.utils import formatDateQuery, formatDateParms, logged_in_client
+from bika.lims.utils import get_link
 from plone.app.layout.globals.interfaces import IViewView
 from senaite.core.i18n import translate as t
 from senaite.core import logger
@@ -111,15 +112,34 @@ class Report(BrowserView):
             analysis = api.get_object(analysis)
             if not analysis.getResult():
                 continue
-            sample_point = ""
+            sample_point_link = ""
             if analysis.getSamplePoint():
-                sample_point = analysis.getSamplePoint().Title()
-            sample_type = ""
+                sample_point = analysis.getSamplePoint()
+                sample_point_title = sample_point.Title()
+                sample_point_url = sample_point.absolute_url()
+                sample_point_link = get_link(
+                    sample_point_url, sample_point_title)
+
+            sample_type_link = ""
             if analysis.getSampleType():
-                sample_type = analysis.getSampleType().Title()
+                sample_type = analysis.getSampleType()
+                sample_type_title = sample_type.Title()
+                sample_type_url = sample_type.absolute_url()
+                sample_type_link = get_link(
+                    sample_type_url, sample_type_title)
+
+            # Links
+            analysis_link = get_link(analysis.absolute_url(), analysis.Title())
+
+            sample = analysis.aq_parent
+            sample_link = get_link(sample.absolute_url(), sample.Title())
+
+            client = analysis.getClient()
+            client_link = get_link(client.absolute_url(), client.Title())
+
             data_point = [
                 {
-                    "value": analysis.Title(),
+                    "value": analysis_link,
                     "class": "text",
                 },
                 {
@@ -131,19 +151,19 @@ class Report(BrowserView):
                     "class": "float",
                 },
                 {
-                    "value": analysis.aq_parent.Title(),
+                    "value": sample_link,
                     "class": "text",
                 },
                 {
-                    "value": analysis.getClient().Title(),
+                    "value": client_link,
                     "class": "text",
                 },
                 {
-                    "value": sample_point,
+                    "value": sample_point_link,
                     "class": "text",
                 },
                 {
-                    "value": sample_type,
+                    "value": sample_type_link,
                     "class": "text",
                 },
             ]
@@ -189,15 +209,34 @@ class Report(BrowserView):
                 analysis = api.get_object(analysis)
                 if not analysis.getResult():
                     continue
-                sample_point = ""
+                sample_point_link = ""
                 if analysis.getSamplePoint():
-                    sample_point = analysis.getSamplePoint().Title()
-                sample_type = ""
+                    sample_point = analysis.getSamplePoint()
+                    sample_point_title = sample_point.Title()
+                    sample_point_url = sample_point.absolute_url()
+                    sample_point_link = get_link(
+                        sample_point_url, sample_point_title)
+
+                sample_type_link = ""
                 if analysis.getSampleType():
-                    sample_type = analysis.getSampleType().Title()
+                    sample_type = analysis.getSampleType()
+                    sample_type_title = sample_type.Title()
+                    sample_type_url = sample_type.absolute_url()
+                    sample_type_link = get_link(
+                        sample_type_url, sample_type_title)
+
+                # Links
+                analysis_link = get_link(analysis.absolute_url(), analysis.Title())
+
+                sample = analysis.aq_parent
+                sample_link = get_link(sample.absolute_url(), sample.Title())
+
+                client = analysis.getClient()
+                client_link = get_link(client.absolute_url(), client.Title())
+
                 data_point = [
                     {
-                        "value": analysis.Title(),
+                        "value": analysis_link,
                         "class": "text",
                     },
                     {
@@ -209,19 +248,19 @@ class Report(BrowserView):
                         "class": "float",
                     },
                     {
-                        "value": analysis.aq_parent.Title(),
+                        "value": sample_link,
                         "class": "text",
                     },
                     {
-                        "value": analysis.getClient().Title(),
+                        "value": client_link,
                         "class": "text",
                     },
                     {
-                        "value": sample_point,
+                        "value": sample_point_link,
                         "class": "text",
                     },
                     {
-                        "value": sample_type,
+                        "value": sample_type_link,
                         "class": "text",
                     },
                 ]
