@@ -439,7 +439,7 @@ class Report(BrowserView):
                 out_params.append(
                     {"title": _("Client"), "value": client.Title(), "type": "text"}
                 )
-u
+
     def add_filter_by_service(self, query, out_params):
         if not self.request.form.get("ServiceUID", ""):
             return
