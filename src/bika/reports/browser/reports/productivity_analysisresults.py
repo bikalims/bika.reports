@@ -117,16 +117,14 @@ class Report(BrowserView):
                 sample_point = analysis.getSamplePoint()
                 sample_point_title = sample_point.Title()
                 sample_point_url = sample_point.absolute_url()
-                sample_point_link = get_link(
-                    sample_point_url, sample_point_title)
+                sample_point_link = get_link(sample_point_url, sample_point_title)
 
             sample_type_link = ""
             if analysis.getSampleType():
                 sample_type = analysis.getSampleType()
                 sample_type_title = sample_type.Title()
                 sample_type_url = sample_type.absolute_url()
-                sample_type_link = get_link(
-                    sample_type_url, sample_type_title)
+                sample_type_link = get_link(sample_type_url, sample_type_title)
 
             # Links
             analysis_link = get_link(analysis.absolute_url(), analysis.Title())
@@ -214,16 +212,14 @@ class Report(BrowserView):
                     sample_point = analysis.getSamplePoint()
                     sample_point_title = sample_point.Title()
                     sample_point_url = sample_point.absolute_url()
-                    sample_point_link = get_link(
-                        sample_point_url, sample_point_title)
+                    sample_point_link = get_link(sample_point_url, sample_point_title)
 
                 sample_type_link = ""
                 if analysis.getSampleType():
                     sample_type = analysis.getSampleType()
                     sample_type_title = sample_type.Title()
                     sample_type_url = sample_type.absolute_url()
-                    sample_type_link = get_link(
-                        sample_type_url, sample_type_title)
+                    sample_type_link = get_link(sample_type_url, sample_type_title)
 
                 # Links
                 analysis_link = get_link(analysis.absolute_url(), analysis.Title())
@@ -436,9 +432,13 @@ class Report(BrowserView):
         elif self.request.form.get("ClientUID", ""):
             query["getClientUID"] = self.request.form["ClientUID"]
             client = api.get_object_by_uid(query["getClientUID"])
-            out_params.append(
-                {"title": _("Client"), "value": client.Title(), "type": "text"}
-            )
+            if (
+                len([param for param in out_params if param["title"] != _("Client")])
+                == 0
+            ):
+                out_params.append(
+                    {"title": _("Client"), "value": client.Title(), "type": "text"}
+                )
 
     def add_filter_by_service(self, query, out_params):
         if not self.request.form.get("ServiceUID", ""):
