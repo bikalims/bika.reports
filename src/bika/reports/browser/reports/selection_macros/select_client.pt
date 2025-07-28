@@ -1,11 +1,13 @@
 <div class="field" tal:attributes="style view/style|nothing"
      tal:condition="not:here/member_is_client" i18n:domain="senaite.core">
 
-  <label for="ClientUID" i18n:translate="">Client</label>
+  <label for="ClientUID" i18n:translate="">Client WTF</label>
 
   <select name="ClientUID:ignore_empty"
           class="form-control form-control-sm"
-          id="ClientUID">
+          id="ClientUID"
+          autocomplete="off"
+          placeholder="Select a client ...">
     <option value=""/>
     <tal:clients tal:repeat="client view/clients">
       <option

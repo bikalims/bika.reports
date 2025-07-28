@@ -8,10 +8,6 @@
     }
 }
 
-body {
-    font: 8pt sans-serif;
-}
-
 .page {
   width: 210mm;
   min-height: 297mm;
@@ -123,3 +119,4 @@ table.bika-report-table {
 	font-weight:bold;
 	text-align:right;
 }
+
