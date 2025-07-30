@@ -10,9 +10,9 @@
       <td>
         <tal:date tal:define="input_name string:${view/field_id}_fromdate;
                               default_value string:${view/default_value}">
-          <input tal:condition="default_value"
+          <input tal:condition="default_value" class="form-control"
                  type="date" tal:attributes="name input_name; value default_value"/>
-          <input tal:condition="not: default_value"
+          <input tal:condition="not: default_value" class="form-control"
             type="date" tal:attributes="name input_name;"/>
         </tal:date>
       </td>
@@ -25,9 +25,9 @@
       <td>
         <tal:date tal:define="input_name string:${view/field_id}_todate;
                               default_value string:${view/to_default_value}">
-          <input tal:condition="default_value"
+          <input tal:condition="default_value" class="form-control"
                  type="date" tal:attributes="name input_name; value default_value"/>
-          <input tal:condition="not: default_value"
+          <input tal:condition="not: default_value" class="form-control"
             type="date" tal:attributes="name input_name;"/>
         </tal:date>
       </td>

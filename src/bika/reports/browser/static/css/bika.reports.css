@@ -119,4 +119,7 @@ table.bika-report-table {
 	font-weight:bold;
 	text-align:right;
 }
-
+.ts-control{
+    border: none !important;
+    padding: 0px 0 8px 0 !important;
+}

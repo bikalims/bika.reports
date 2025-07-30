@@ -1,7 +1,7 @@
 <div class="field" tal:attributes="style view/style|nothing"
      tal:condition="not:here/member_is_client" i18n:domain="senaite.core">
 
-  <label for="ClientUID" i18n:translate="">Client WTF</label>
+  <label for="ClientUID" i18n:translate="">Client</label>
 
   <select name="ClientUID:ignore_empty"
           class="form-control form-control-sm"

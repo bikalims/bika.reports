@@ -188,26 +188,27 @@
                 The number of analyses requested per analysis service
               </span>
 
-              <div id="analysestotals" style="display:none;" class="criteria">
+              <div id="analysestotals" style="display:none;" class="criteria col-4">
                 <form action="createreport" method="post"
                       tal:attributes="action string:${here/absolute_url}/createreport"
                       name="productivity_analysesperservice">
                   <input type="hidden" name="report_id"
                          value="productivity_analysesperservice"/>
                   <fieldset>
-                    <tal:x content="structure context/@@selection_macros/select_client"/>
+                    <div tal:content="structure context/@@selection_macros/select_client" class="tomsel"/>
                     <tal:x content="structure python:view.selection_macros.select_daterange_requested(
                                     field_id='Requested',
                                     field_title='Date Requested')"/>
                     <tal:x content="structure python:view.selection_macros.select_daterange_published(
                                     field_id='Published',
                                     field_title='Date Published')"/>
-                    <tal:x content="structure python:view.selection_macros.select_state_analysis(
+                    <div class="tomsel" tal:content="structure python:view.selection_macros.select_state_analysis(
                                     workflow_id='senaite_analysis_workflow',
                                     field_id='senaite_analysis_workflow',
                                     field_title='Analysis state')"/>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
                   </fieldset>
+                  <br />
                   <input tabindex=""
                          class="searchButton allowMultiSubmit"
                          type="submit"
@@ -227,23 +228,24 @@
                 The number of analyses requested per sample type
               </span>
 
-              <div id="analysespersampletype" style="display:none" class="criteria">
+              <div id="analysespersampletype" style="display:none" class="criteria col-4">
                 <form action="createreport" method="post"
                       tal:attributes="action string:${here/absolute_url}/createreport"
                       name="productivity_analysespersampletype">
                   <input type="hidden" name="report_id"
                          value="productivity_analysespersampletype"/>
                   <fieldset>
-                    <tal:x content="structure context/@@selection_macros/select_client"/>
+                    <div tal:content="structure context/@@selection_macros/select_client" class="tomsel"/>
                     <tal:x content="structure python:view.selection_macros.select_daterange_requested(
                                     field_id='Requested',
                                     field_title='Date Requested')"/>
-                    <tal:x content="structure python:view.selection_macros.select_state_analysis(
+                    <div class="tomsel" tal:content="structure python:view.selection_macros.select_state_analysis(
                                     workflow_id='senaite_analysis_workflow',
                                     field_id='senaite_analysis_workflow',
                                     field_title='Analysis state')"/>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
                   </fieldset>
+                  <br />
                   <input tabindex=""
                          class="searchButton allowMultiSubmit"
                          type="submit"
@@ -273,23 +275,24 @@
                 The number of requests and analyses per client
               </span>
 
-              <div id="analysesperclient" style="display:none" class="criteria">
+              <div id="analysesperclient" style="display:none" class="criteria col-4">
                 <form action="createreport" method="post"
                       tal:attributes="action string:${here/absolute_url}/createreport"
                       name="productivity_analysesperclient">
                   <input type="hidden" name="report_id"
                          value="productivity_analysesperclient"/>
                   <fieldset>
-                    <tal:x content="structure context/@@selection_macros/select_client"/>
+                    <div tal:content="structure context/@@selection_macros/select_client" class="tomsel"/>
                     <tal:x content="structure python:view.selection_macros.select_daterange_requested(
                                     field_id='Requested',
                                     field_title='Date Requested')"/>
-                    <tal:x content="structure python:view.selection_macros.select_state_analysis(
+                    <div class="tomsel" tal:content="structure python:view.selection_macros.select_state_analysis(
                                     workflow_id='senaite_analysis_workflow',
                                     field_id='senaite_analysis_workflow',
                                     field_title='Analysis state')"/>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
                   </fieldset>
+                  <br />
                   <input tabindex=""
                          class="searchButton allowMultiSubmit"
                          type="submit"
@@ -309,7 +312,7 @@
                 The results of an analysis over time
               </span>
 
-              <div id="analysis_results" style="display:block" class="criteria">
+              <div id="analysis_results" style="display:block" class="criteria col-4">
                 <form action="createreport" method="post"
                       tal:attributes="action string:${here/absolute_url}/createreport"
                       name="productivity_analysisresults">
@@ -341,12 +344,14 @@
                                     field_title='Date Result Captured')"/>
                   </fieldset>
                   <div tal:content="structure context/@@selection_macros/select_output_format" hidden/>
+                  <br />
                   <input tabindex=""
                          class="searchButton allowMultiSubmit"
                          type="submit"
                          name="submit"
                          value="Preview report"
                          i18n:attributes="value"/>
+                  <br/>
                 </form>
               </div>
             </li>
