@@ -23,9 +23,12 @@
         <span i18n:translate="label_date_to">to</span>
       </td>
       <td>
-        <tal:date tal:define="input_name string:${view/field_id}_todate;">
-          <input type="date"
-                 tal:attributes="name input_name;"/>
+        <tal:date tal:define="input_name string:${view/field_id}_todate;
+                              default_value string:${view/to_default_value}">
+          <input tal:condition="default_value"
+                 type="date" tal:attributes="name input_name; value default_value"/>
+          <input tal:condition="not: default_value"
+            type="date" tal:attributes="name input_name;"/>
         </tal:date>
       </td>
     </tr>

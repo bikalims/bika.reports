@@ -61,6 +61,7 @@ class ProductivityView(BrowserView):
         self.getAnalysts = getUsers(self.context, ["Manager", "LabManager", "Analyst"])
         self.last_month = DateTime() - 30
         self.last_month = self.last_month.strftime("%Y-%m-%d")
+        self.today = DateTime().strftime("%Y-%m-%d")
 
         self.additional_reports = []
         adapters = getAdapters((self.context,), IProductivityReport)

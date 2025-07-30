@@ -332,10 +332,12 @@
                                     multiselect=False)"/>
                   </fieldset>
                   <fieldset>
-                    <tal:x define="default view/last_month"
+                    <tal:x define="default view/last_month;
+                                   to_default view/today"
                            content="structure python:view.selection_macros.select_daterange_received(
                                     field_id='DateResultCapture',
                                     default_value=default,
+                                    to_default_value=to_default,
                                     field_title='Date Result Captured')"/>
                   </fieldset>
                   <div tal:content="structure context/@@selection_macros/select_output_format" hidden/>
