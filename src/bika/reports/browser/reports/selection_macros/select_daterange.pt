@@ -5,7 +5,7 @@
   <table id="date">
     <tr>
       <td>
-        <span i18n:translate="label_date_from">From</span>
+        <span class="form-control-label" i18n:translate="label_date_from">From</span>
       </td>
       <td>
         <tal:date tal:define="input_name string:${view/field_id}_fromdate;
@@ -20,7 +20,7 @@
 
     <tr>
       <td>
-        <span i18n:translate="label_date_to">to</span>
+        <span class="form-control-label" i18n:translate="label_date_to">to</span>
       </td>
       <td>
         <tal:date tal:define="input_name string:${view/field_id}_todate;

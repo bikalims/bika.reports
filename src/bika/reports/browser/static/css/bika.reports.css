@@ -119,7 +119,7 @@ table.bika-report-table {
 	font-weight:bold;
 	text-align:right;
 }
-.tomsel {
+.field {
   margin-bottom: 10px;
 }
 .ts-wrapper {
@@ -137,4 +137,11 @@ table.bika-report-table {
 }
 .criteria {
   margin-bottom: 20px;
+}
+.criteria label {
+  font-style: italic;
+  font-weight: bold;
+}
+.form-control-label {
+  margin-right: 10px;
 }
