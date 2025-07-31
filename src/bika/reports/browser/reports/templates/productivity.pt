@@ -312,7 +312,7 @@
                 The results of an analysis over time
               </span>
 
-              <div id="analysis_results" style="display:block" class="criteria col-4">
+              <div id="analysis_results" style="display:none" class="criteria col-4">
                 <form action="createreport" method="post"
                       tal:attributes="action string:${here/absolute_url}/createreport"
                       name="productivity_analysisresults">
