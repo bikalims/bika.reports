@@ -40,17 +40,19 @@ class window.ReportFolderView
     $(".tomsel").each (i, el) =>
       select_el = el.childNodes[0].childNodes[3]
       try
-        console.log "Select Element ID: " + select_el.id
-        console.log "Already Enhanced: " + select_el.tomselect is not "undefined"
         ts = new TomSelect(select_el,
           create: false
           allowEmptyOption: true
           placeholder: "Choose an option"
+          sortField: {
+            field: "text"
+            direction: "asc"
+          }
         )
         @tomselects[select_el.id] = ts
-        console.log "Wrapper: " + ts.wrapper
-        console.log "Input: " + ts.input
-        console.log "TomSelect init worked " + select_el
+        console.debug "Wrapper: " + ts.wrapper
+        console.debug "Input: " + ts.input
+        console.debug "TomSelect init worked " + select_el
       catch err
         console.error "TomSelect init failed:", err
 
@@ -116,6 +118,7 @@ class window.ReportFolderView
       if item.hasOwnProperty(fieldname)
         for val in item[fieldname]
           result.push val['uid']
+    debugger;
     return result
         
   client_selected: (selected_client) =>
@@ -128,25 +131,25 @@ class window.ReportFolderView
     # Get items
     result = me.call_command(command)
     result.then (data) ->
-      console.log('Items returned: ' + data.items.length)
+      console.debug('Items returned: ' + data.items.length)
       me.populate_dropdown('SamplePointUID', data.items, clear=true, add_empty=true)
       
       command = 'search?portal_type=SampleType'
       result = me.call_command(command)
       result.then (data) ->
-         console.log('Items returned: ' + data.items.length)
+         console.debug('Items returned: ' + data.items.length)
          me.populate_dropdown('SampleTypeUID', data.items, clear=true, add_empty=true)
 
          command = 'search?portal_type=AnalysisSpec'
          result = me.call_command(command)
          result.then (data) ->
-            console.log('Items returned: ' + data.items.length)
+            console.debug('Items returned: ' + data.items.length)
             me.populate_dropdown('analysis_spec', data.items, clear=true, add_empty=true)
 
             command = 'search?portal_type=AnalysisService'
             result = me.call_command(command)
             result.then (data) ->
-               console.log('Items returned: ' + data.items.length)
+               console.debug('Items returned: ' + data.items.length)
                me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
                me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
 
@@ -159,7 +162,7 @@ class window.ReportFolderView
       # Get samplepoint
       result = me.call_command(command, limit=0)
       result.then (data) ->
-         console.log('Items returned: ' + data.items.length)
+         console.debug('Items returned: ' + data.items.length)
          command = 'search?portal_type=SampleType'
          sample_type_uids = me.get_object_values('sample_types', data.items)
          if sample_type_uids
@@ -169,19 +172,19 @@ class window.ReportFolderView
          # Get items
          result = me.call_command(command)
          result.then (data) ->
-            console.log('Items returned: ' + data.items.length)
+            console.debug('Items returned: ' + data.items.length)
             me.populate_dropdown('SampleTypeUID', data.items, clear=true, add_empty=true)
 
             command = 'search?portal_type=AnalysisSpec'
             result = me.call_command(command)
             result.then (data) ->
-               console.log('Items returned: ' + data.items.length)
+               console.debug('Items returned: ' + data.items.length)
                me.populate_dropdown('analysis_spec', data.items, clear=true, add_empty=true)
 
                command = 'search?portal_type=AnalysisService'
                result = me.call_command(command)
                result.then (data) ->
-                  console.log('Items returned: ' + data.items.length)
+                  console.debug('Items returned: ' + data.items.length)
                   me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
                   me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
 
@@ -197,13 +200,13 @@ class window.ReportFolderView
      # Get items
      result = me.call_command(command)
      result.then (data) ->
-        console.log('Items returned: ' + data.items.length)
+        console.debug('Items returned: ' + data.items.length)
         me.populate_dropdown('analysis_spec', data.items, clear=true, add_empty=true)
 
         command = 'search?portal_type=AnalysisService'
         result = me.call_command(command)
         result.then (data) ->
-           console.log('Items returned: ' + data.items.length)
+           console.debug('Items returned: ' + data.items.length)
            me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
            me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
 
@@ -224,7 +227,7 @@ class window.ReportFolderView
            # Get Services
            result = me.call_command(command)
            result.then (data) ->
-              console.log('Items returned: ' + data.items.length)
+              console.debug('Items returned: ' + data.items.length)
               me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
               me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
     else
@@ -232,7 +235,7 @@ class window.ReportFolderView
       command = 'search?portal_type=AnalysisService'
       result = me.call_command(command)
       result.then (data) ->
-         console.log('Items returned: ' + data.items.length)
+         console.debug('Items returned: ' + data.items.length)
          me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
          me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
 
@@ -241,7 +244,7 @@ class window.ReportFolderView
     ###*
      * Event handler when dropdown changed
     ###
-    console.log "°°° ReportFolderView::on_dropdown_change on e " + e.id + " °°°"
+    console.debug "°°° ReportFolderView::on_dropdown_change on e " + e.id + " °°°"
     if e.currentTarget
       $el = $(e.currentTarget)
     else
