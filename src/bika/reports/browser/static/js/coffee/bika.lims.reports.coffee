@@ -118,7 +118,6 @@ class window.ReportFolderView
       if item.hasOwnProperty(fieldname)
         for val in item[fieldname]
           result.push val['uid']
-    debugger;
     return result
         
   client_selected: (selected_client) =>
