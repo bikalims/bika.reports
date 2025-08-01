@@ -13,6 +13,9 @@ class window.ReportFolderView
     # initialize api
     @api = new ReportsAPI()
 
+    # Use requestAnimationFrame to wait for DOM painting
+    requestAnimationFrame =>
+      @initialize_plugins()
 
   ### INITIALIZERS ###
 
@@ -24,15 +27,46 @@ class window.ReportFolderView
 
     # When the anchor for a given report is selected, display the report form
     $("body").on "click", "a[id$='_selector']", @on_toggle_change
+    
+
+  initialize_plugins: =>
+    console.log "TomSelect is a " + typeof TomSelect
+    if typeof TomSelect is "undefined"
+      console.warn "TomSelect not ready, retrying..."
+      setTimeout @initialize_plugins, 50
+      return
+
+    @tomselects = {}
+    $(".tomsel").each (i, el) =>
+      select_el = el.childNodes[0].childNodes[3]
+      try
+        ts = new TomSelect(select_el,
+          create: false
+          allowEmptyOption: true
+          placeholder: "Choose an option"
+          sortField: {
+            field: "text"
+            direction: "asc"
+          }
+        )
+        @tomselects[select_el.id] = ts
+        console.debug "Wrapper: " + ts.wrapper
+        console.debug "Input: " + ts.input
+        console.debug "TomSelect init worked " + select_el
+      catch err
+        console.error "TomSelect init failed:", err
+
     # When the dropdown is changed for a given select, update dependant dropdown
+    # $("#ClientUID").on "change", "select", @on_dropdown_change
     $("body").on "change", "select", @on_dropdown_change
 
+    console.log "TomSelect initialised"
 
   on_toggle_change: (event) =>
     ###*
      * Event handler when the toggle anchor is clicked
     ###
-    console.debug "°°° ReportFolderView::on_toggle_change °°°"
+    console.debug "°°° ReportFolderView::on_toggle_change with" + event + " °°°"
 
     event.preventDefault()
     $(".criteria").toggle false
@@ -47,26 +81,36 @@ class window.ReportFolderView
     return result
 
   populate_dropdown: (el_name, items, clear=true, add_empty=false) =>
-      # Empty select
-      $el = $(el_name)
-      
-      # Empty select if specified
-      if clear
-        $el.empty()
+    console.log "populate_dropdown: " + el_name
+    # eransform to [{value: "foo", text: "Foo"}, ...]
+    data = []
+    for item in items
+      data.push {value: item['uid'], text: item['title']}
 
-      # Add new options
-      if add_empty
-        $('<option>').val('').text('').appendTo($el)  # Empty option
+    # Assume data.options is [{value: "foo", text: "Foo"}, ...]
+    ts = @tomselects[el_name]
+    if ts?
+      ts.clearOptions()
+      for opt in data
+        ts.addOption(opt)
+      ts.refreshOptions(false)
+    else
+      console.error 'populate_dropdown: missing TS element ' + el_name + ' in ' + @tomselects
 
-      # sort items
-      sorted_items = items.sort (a, b) ->
-        if a.title < b.title then -1
-        else if a.title > b.title then 1
-        else 0
+    # # Empty select
+    # $el = $(el_name)
+    # 
+    # # Empty select if specified
+    # if clear
+    #   $el.empty()
 
-      # Add new options
-      for item in sorted_items
-        $('<option>').val(item.uid).text(item.title).appendTo($el)
+    # # Add new options
+    # if add_empty
+    #   $('<option>').val('').text('').appendTo($el)  # Empty option
+
+    # # Add new options
+    # for item in sorted_items
+    #   $('<option>').val(item.uid).text(item.title).appendTo($el)
 
   get_object_values: (fieldname, items) =>
     result = []
@@ -74,6 +118,7 @@ class window.ReportFolderView
       if item.hasOwnProperty(fieldname)
         for val in item[fieldname]
           result.push val['uid']
+    debugger;
     return result
         
   client_selected: (selected_client) =>
@@ -86,27 +131,27 @@ class window.ReportFolderView
     # Get items
     result = me.call_command(command)
     result.then (data) ->
-      console.log('Items returned: ' + data.items.length)
-      me.populate_dropdown('#SamplePointUID', data.items, clear=true, add_empty=true)
+      console.debug('Items returned: ' + data.items.length)
+      me.populate_dropdown('SamplePointUID', data.items, clear=true, add_empty=true)
       
       command = 'search?portal_type=SampleType'
       result = me.call_command(command)
       result.then (data) ->
-         console.log('Items returned: ' + data.items.length)
-         me.populate_dropdown('#SampleTypeUID', data.items, clear=true, add_empty=true)
+         console.debug('Items returned: ' + data.items.length)
+         me.populate_dropdown('SampleTypeUID', data.items, clear=true, add_empty=true)
 
          command = 'search?portal_type=AnalysisSpec'
          result = me.call_command(command)
          result.then (data) ->
-            console.log('Items returned: ' + data.items.length)
-            me.populate_dropdown('#analysis_spec', data.items, clear=true, add_empty=true)
+            console.debug('Items returned: ' + data.items.length)
+            me.populate_dropdown('analysis_spec', data.items, clear=true, add_empty=true)
 
             command = 'search?portal_type=AnalysisService'
             result = me.call_command(command)
             result.then (data) ->
-               console.log('Items returned: ' + data.items.length)
-               me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
-               me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
+               console.debug('Items returned: ' + data.items.length)
+               me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
+               me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
 
   sample_point_selected: (selected_sample_point) =>
     console.log 'Got SamplePointUID" ' + selected_sample_point
@@ -117,7 +162,7 @@ class window.ReportFolderView
       # Get samplepoint
       result = me.call_command(command, limit=0)
       result.then (data) ->
-         console.log('Items returned: ' + data.items.length)
+         console.debug('Items returned: ' + data.items.length)
          command = 'search?portal_type=SampleType'
          sample_type_uids = me.get_object_values('sample_types', data.items)
          if sample_type_uids
@@ -127,21 +172,21 @@ class window.ReportFolderView
          # Get items
          result = me.call_command(command)
          result.then (data) ->
-            console.log('Items returned: ' + data.items.length)
-            me.populate_dropdown('#SampleTypeUID', data.items, clear=true, add_empty=true)
+            console.debug('Items returned: ' + data.items.length)
+            me.populate_dropdown('SampleTypeUID', data.items, clear=true, add_empty=true)
 
             command = 'search?portal_type=AnalysisSpec'
             result = me.call_command(command)
             result.then (data) ->
-               console.log('Items returned: ' + data.items.length)
-               me.populate_dropdown('#analysis_spec', data.items, clear=true, add_empty=true)
+               console.debug('Items returned: ' + data.items.length)
+               me.populate_dropdown('analysis_spec', data.items, clear=true, add_empty=true)
 
                command = 'search?portal_type=AnalysisService'
                result = me.call_command(command)
                result.then (data) ->
-                  console.log('Items returned: ' + data.items.length)
-                  me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
-                  me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
+                  console.debug('Items returned: ' + data.items.length)
+                  me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
+                  me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
 
 
   sample_type_selected: (selected_sample_type) =>
@@ -155,15 +200,15 @@ class window.ReportFolderView
      # Get items
      result = me.call_command(command)
      result.then (data) ->
-        console.log('Items returned: ' + data.items.length)
-        me.populate_dropdown('#analysis_spec', data.items, clear=true, add_empty=true)
+        console.debug('Items returned: ' + data.items.length)
+        me.populate_dropdown('analysis_spec', data.items, clear=true, add_empty=true)
 
         command = 'search?portal_type=AnalysisService'
         result = me.call_command(command)
         result.then (data) ->
-           console.log('Items returned: ' + data.items.length)
-           me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
-           me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
+           console.debug('Items returned: ' + data.items.length)
+           me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
+           me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
 
   analysis_spec_selected: (selected_analysis_spec) =>
     console.log 'Got AnalysisSpec" ' + selected_analysis_spec
@@ -182,27 +227,32 @@ class window.ReportFolderView
            # Get Services
            result = me.call_command(command)
            result.then (data) ->
-              console.log('Items returned: ' + data.items.length)
-              me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
-              me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
+              console.debug('Items returned: ' + data.items.length)
+              me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
+              me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
     else
       # Get Services
       command = 'search?portal_type=AnalysisService'
       result = me.call_command(command)
       result.then (data) ->
-         console.log('Items returned: ' + data.items.length)
-         me.populate_dropdown('#ServiceUID', data.items, clear=true, add_empty=false)
-         me.populate_dropdown('#SecondServiceUID', data.items, clear=true, add_empty=true)
+         console.debug('Items returned: ' + data.items.length)
+         me.populate_dropdown('ServiceUID', data.items, clear=true, add_empty=false)
+         me.populate_dropdown('SecondServiceUID', data.items, clear=true, add_empty=true)
 
 
   on_dropdown_change: (e) =>
     ###*
      * Event handler when dropdown changed
     ###
-    $el = $(e.currentTarget)
-    console.log "°°° ReportFolderView::on_dropdown_change on " + $el.id + " °°°"
+    console.debug "°°° ReportFolderView::on_dropdown_change on e " + e.id + " °°°"
+    if e.currentTarget
+      $el = $(e.currentTarget)
+    else
+      $el = $(e)
+    console.log "°°° ReportFolderView::on_dropdown_change on target" + $el.id + " °°°"
     outer_parent = $el.closest('.update_dropdown')
     if not $el.closest('.update_dropdown').length
+      console.log 'element ' + $el + ' not closest to update_dropdown'
       return
 
     console.log 'update_dropdown: ' + e.target.id

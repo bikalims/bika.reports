@@ -9,9 +9,24 @@
       this.load = this.load.bind(this);
       /* INITIALIZERS */
       this.bind_eventhandler = this.bind_eventhandler.bind(this);
+      this.initialize_plugins = this.initialize_plugins.bind(this);
       this.on_toggle_change = this.on_toggle_change.bind(this);
       this.call_command = this.call_command.bind(this);
       this.populate_dropdown = this.populate_dropdown.bind(this);
+      // # Empty select
+      // $el = $(el_name)
+
+      // # Empty select if specified
+      // if clear
+      //   $el.empty()
+
+      // # Add new options
+      // if add_empty
+      //   $('<option>').val('').text('').appendTo($el)  # Empty option
+
+      // # Add new options
+      // for item in sorted_items
+      //   $('<option>').val(item.uid).text(item.title).appendTo($el)
       this.get_object_values = this.get_object_values.bind(this);
       this.client_selected = this.client_selected.bind(this);
       this.sample_point_selected = this.sample_point_selected.bind(this);
@@ -25,7 +40,11 @@
       // initialize toggle anchors
       this.bind_eventhandler();
       // initialize api
-      return this.api = new ReportsAPI();
+      this.api = new ReportsAPI();
+      // Use requestAnimationFrame to wait for DOM painting
+      return requestAnimationFrame(() => {
+        return this.initialize_plugins();
+      });
     }
 
     bind_eventhandler() {
@@ -34,9 +53,43 @@
        */
       console.debug("ReportFolderView::bind_eventhandler");
       // When the anchor for a given report is selected, display the report form
-      $("body").on("click", "a[id$='_selector']", this.on_toggle_change);
+      return $("body").on("click", "a[id$='_selector']", this.on_toggle_change);
+    }
+
+    initialize_plugins() {
+      console.log("TomSelect is a " + typeof TomSelect);
+      if (typeof TomSelect === "undefined") {
+        console.warn("TomSelect not ready, retrying...");
+        setTimeout(this.initialize_plugins, 50);
+        return;
+      }
+      this.tomselects = {};
+      $(".tomsel").each((i, el) => {
+        var err, select_el, ts;
+        select_el = el.childNodes[0].childNodes[3];
+        try {
+          ts = new TomSelect(select_el, {
+            create: false,
+            allowEmptyOption: true,
+            placeholder: "Choose an option",
+            sortField: {
+              field: "text",
+              direction: "asc"
+            }
+          });
+          this.tomselects[select_el.id] = ts;
+          console.debug("Wrapper: " + ts.wrapper);
+          console.debug("Input: " + ts.input);
+          return console.debug("TomSelect init worked " + select_el);
+        } catch (error) {
+          err = error;
+          return console.error("TomSelect init failed:", err);
+        }
+      });
       // When the dropdown is changed for a given select, update dependant dropdown
-      return $("body").on("change", "select", this.on_dropdown_change);
+      // $("#ClientUID").on "change", "select", @on_dropdown_change
+      $("body").on("change", "select", this.on_dropdown_change);
+      return console.log("TomSelect initialised");
     }
 
     on_toggle_change(event) {
@@ -44,7 +97,7 @@
       /**
        * Event handler when the toggle anchor is clicked
        */
-      console.debug("°°° ReportFolderView::on_toggle_change °°°");
+      console.debug("°°° ReportFolderView::on_toggle_change with" + event + " °°°");
       event.preventDefault();
       $(".criteria").toggle(false);
       div_id = event.currentTarget.id.split("_selector")[0];
@@ -64,51 +117,45 @@
     }
 
     populate_dropdown(el_name, items, clear = true, add_empty = false) {
-      var $el, i, item, len, results, sorted_items;
-      // Empty select
-      $el = $(el_name);
-      
-      // Empty select if specified
-      if (clear) {
-        $el.empty();
+      var data, item, j, k, len, len1, opt, ts;
+      console.log("populate_dropdown: " + el_name);
+      // eransform to [{value: "foo", text: "Foo"}, ...]
+      data = [];
+      for (j = 0, len = items.length; j < len; j++) {
+        item = items[j];
+        data.push({
+          value: item['uid'],
+          text: item['title']
+        });
       }
-      // Add new options
-      if (add_empty) {
-        $('<option>').val('').text('').appendTo($el); // Empty option
-      }
-      
-      // sort items
-      sorted_items = items.sort(function(a, b) {
-        if (a.title < b.title) {
-          return -1;
-        } else if (a.title > b.title) {
-          return 1;
-        } else {
-          return 0;
+      // Assume data.options is [{value: "foo", text: "Foo"}, ...]
+      ts = this.tomselects[el_name];
+      if (ts != null) {
+        ts.clearOptions();
+        for (k = 0, len1 = data.length; k < len1; k++) {
+          opt = data[k];
+          ts.addOption(opt);
         }
-      });
-// Add new options
-      results = [];
-      for (i = 0, len = sorted_items.length; i < len; i++) {
-        item = sorted_items[i];
-        results.push($('<option>').val(item.uid).text(item.title).appendTo($el));
+        return ts.refreshOptions(false);
+      } else {
+        return console.error('populate_dropdown: missing TS element ' + el_name + ' in ' + this.tomselects);
       }
-      return results;
     }
 
     get_object_values(fieldname, items) {
-      var i, item, j, len, len1, ref, result, val;
+      var item, j, k, len, len1, ref, result, val;
       result = [];
-      for (i = 0, len = items.length; i < len; i++) {
-        item = items[i];
+      for (j = 0, len = items.length; j < len; j++) {
+        item = items[j];
         if (item.hasOwnProperty(fieldname)) {
           ref = item[fieldname];
-          for (j = 0, len1 = ref.length; j < len1; j++) {
-            val = ref[j];
+          for (k = 0, len1 = ref.length; k < len1; k++) {
+            val = ref[k];
             result.push(val['uid']);
           }
         }
       }
+      debugger;
       return result;
     }
 
@@ -125,24 +172,24 @@
       result = me.call_command(command);
       return result.then(function(data) {
         var add_empty, clear;
-        console.log('Items returned: ' + data.items.length);
-        me.populate_dropdown('#SamplePointUID', data.items, clear = true, add_empty = true);
+        console.debug('Items returned: ' + data.items.length);
+        me.populate_dropdown('SamplePointUID', data.items, clear = true, add_empty = true);
         command = 'search?portal_type=SampleType';
         result = me.call_command(command);
         return result.then(function(data) {
-          console.log('Items returned: ' + data.items.length);
-          me.populate_dropdown('#SampleTypeUID', data.items, clear = true, add_empty = true);
+          console.debug('Items returned: ' + data.items.length);
+          me.populate_dropdown('SampleTypeUID', data.items, clear = true, add_empty = true);
           command = 'search?portal_type=AnalysisSpec';
           result = me.call_command(command);
           return result.then(function(data) {
-            console.log('Items returned: ' + data.items.length);
-            me.populate_dropdown('#analysis_spec', data.items, clear = true, add_empty = true);
+            console.debug('Items returned: ' + data.items.length);
+            me.populate_dropdown('analysis_spec', data.items, clear = true, add_empty = true);
             command = 'search?portal_type=AnalysisService';
             result = me.call_command(command);
             return result.then(function(data) {
-              console.log('Items returned: ' + data.items.length);
-              me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
-              return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
+              console.debug('Items returned: ' + data.items.length);
+              me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
+              return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
             });
           });
         });
@@ -159,13 +206,13 @@
         // Get samplepoint
         result = me.call_command(command, limit = 0);
         return result.then(function(data) {
-          var i, len, sample_type_uid, sample_type_uids;
-          console.log('Items returned: ' + data.items.length);
+          var j, len, sample_type_uid, sample_type_uids;
+          console.debug('Items returned: ' + data.items.length);
           command = 'search?portal_type=SampleType';
           sample_type_uids = me.get_object_values('sample_types', data.items);
           if (sample_type_uids) {
-            for (i = 0, len = sample_type_uids.length; i < len; i++) {
-              sample_type_uid = sample_type_uids[i];
+            for (j = 0, len = sample_type_uids.length; j < len; j++) {
+              sample_type_uid = sample_type_uids[j];
               command += '&UID=' + sample_type_uid;
             }
           }
@@ -174,19 +221,19 @@
           result = me.call_command(command);
           return result.then(function(data) {
             var add_empty, clear;
-            console.log('Items returned: ' + data.items.length);
-            me.populate_dropdown('#SampleTypeUID', data.items, clear = true, add_empty = true);
+            console.debug('Items returned: ' + data.items.length);
+            me.populate_dropdown('SampleTypeUID', data.items, clear = true, add_empty = true);
             command = 'search?portal_type=AnalysisSpec';
             result = me.call_command(command);
             return result.then(function(data) {
-              console.log('Items returned: ' + data.items.length);
-              me.populate_dropdown('#analysis_spec', data.items, clear = true, add_empty = true);
+              console.debug('Items returned: ' + data.items.length);
+              me.populate_dropdown('analysis_spec', data.items, clear = true, add_empty = true);
               command = 'search?portal_type=AnalysisService';
               result = me.call_command(command);
               return result.then(function(data) {
-                console.log('Items returned: ' + data.items.length);
-                me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
-                return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
+                console.debug('Items returned: ' + data.items.length);
+                me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
+                return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
               });
             });
           });
@@ -208,14 +255,14 @@
       result = me.call_command(command);
       return result.then(function(data) {
         var add_empty, clear;
-        console.log('Items returned: ' + data.items.length);
-        me.populate_dropdown('#analysis_spec', data.items, clear = true, add_empty = true);
+        console.debug('Items returned: ' + data.items.length);
+        me.populate_dropdown('analysis_spec', data.items, clear = true, add_empty = true);
         command = 'search?portal_type=AnalysisService';
         result = me.call_command(command);
         return result.then(function(data) {
-          console.log('Items returned: ' + data.items.length);
-          me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
-          return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
+          console.debug('Items returned: ' + data.items.length);
+          me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
+          return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
         });
       });
     }
@@ -228,12 +275,12 @@
         command = 'analysisspec/' + selected_analysis_spec;
         result = me.call_command(command, limit = 0);
         return result.then(function(data) {
-          var i, len, service_uid, service_uids;
+          var j, len, service_uid, service_uids;
           service_uids = me.get_object_values('ResultsRange', data.items);
           command = 'search?portal_type=AnalysisService';
           if (service_uids) {
-            for (i = 0, len = service_uids.length; i < len; i++) {
-              service_uid = service_uids[i];
+            for (j = 0, len = service_uids.length; j < len; j++) {
+              service_uid = service_uids[j];
               command += '&UID=' + service_uid;
             }
             
@@ -241,9 +288,9 @@
             result = me.call_command(command);
             return result.then(function(data) {
               var add_empty, clear;
-              console.log('Items returned: ' + data.items.length);
-              me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
-              return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
+              console.debug('Items returned: ' + data.items.length);
+              me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
+              return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
             });
           }
         });
@@ -253,22 +300,28 @@
         result = me.call_command(command);
         return result.then(function(data) {
           var add_empty, clear;
-          console.log('Items returned: ' + data.items.length);
-          me.populate_dropdown('#ServiceUID', data.items, clear = true, add_empty = false);
-          return me.populate_dropdown('#SecondServiceUID', data.items, clear = true, add_empty = true);
+          console.debug('Items returned: ' + data.items.length);
+          me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
+          return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
         });
       }
     }
 
     on_dropdown_change(e) {
+      var $el, outer_parent, selected_analysis_spec, selected_client, selected_sample_point, selected_sample_type;
       /**
        * Event handler when dropdown changed
        */
-      var $el, outer_parent, selected_analysis_spec, selected_client, selected_sample_point, selected_sample_type;
-      $el = $(e.currentTarget);
-      console.log("°°° ReportFolderView::on_dropdown_change on " + $el.id + " °°°");
+      console.debug("°°° ReportFolderView::on_dropdown_change on e " + e.id + " °°°");
+      if (e.currentTarget) {
+        $el = $(e.currentTarget);
+      } else {
+        $el = $(e);
+      }
+      console.log("°°° ReportFolderView::on_dropdown_change on target" + $el.id + " °°°");
       outer_parent = $el.closest('.update_dropdown');
       if (!$el.closest('.update_dropdown').length) {
+        console.log('element ' + $el + ' not closest to update_dropdown');
         return;
       }
       console.log('update_dropdown: ' + e.target.id);

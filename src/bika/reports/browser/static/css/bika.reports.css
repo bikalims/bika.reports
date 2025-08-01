@@ -8,10 +8,6 @@
     }
 }
 
-body {
-    font: 8pt sans-serif;
-}
-
 .page {
   width: 210mm;
   min-height: 297mm;
@@ -122,4 +118,30 @@ table.bika-report-table {
 .total_label {
 	font-weight:bold;
 	text-align:right;
+}
+.field {
+  margin-bottom: 10px;
+}
+.ts-wrapper {
+    padding: 0px !important;
+}
+.ts-control {
+    /* border: none !important; */
+    padding: 0px !important;
+    height: 100%;
+}
+.ts-control .item {
+  font-size: 13px;
+  padding: 5px !important;
+  height: 100%;
+}
+.criteria {
+  margin-bottom: 20px;
+}
+.criteria label {
+  font-style: italic;
+  font-weight: bold;
+}
+.form-control-label {
+  margin-right: 10px;
 }
