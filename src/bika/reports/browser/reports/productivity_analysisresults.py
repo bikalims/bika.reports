@@ -119,14 +119,14 @@ class Report(BrowserView):
             sample_link = get_link(sample.absolute_url(), sample.Title())
 
             batch_id_link = ""
-            if analysis.aq_parent.getBatch():
-                batch = analysis.aq_parent.getBatch()
-                batch_id_link = get_link(batch.absolute_url(), batch.Title())
-
             client_batch_id_link = ""
             if analysis.aq_parent.getBatch():
                 batch = analysis.aq_parent.getBatch()
-                client_batch_id_link = get_link(batch.absolute_url(), batch.Title())
+                batch_id_link = get_link(batch.absolute_url(), batch.getId())
+                if batch.getClientBatchID():
+                    client_batch_id_link = get_link(
+                        batch.absolute_url(), batch.getClientBatchID()
+                    )
 
             data_point = [
                 {
@@ -139,7 +139,8 @@ class Report(BrowserView):
                 },
                 {
                     "value": analysis.getFormattedResult(),
-                    "class": "float",
+                    "class": "text",
+                    "style": "text-align:right",
                 },
                 {
                     "value": sample_link,
@@ -204,14 +205,14 @@ class Report(BrowserView):
                 sample_link = get_link(sample.absolute_url(), sample.Title())
 
                 batch_id_link = ""
-                if analysis.aq_parent.getBatch():
-                    batch = analysis.aq_parent.getBatch()
-                    batch_id_link = get_link(batch.absolute_url(), batch.Title())
-
                 client_batch_id_link = ""
                 if analysis.aq_parent.getBatch():
                     batch = analysis.aq_parent.getBatch()
-                    client_batch_id_link = get_link(batch.absolute_url(), batch.Title())
+                    batch_id_link = get_link(batch.absolute_url(), batch.getId())
+                    if batch.getClientBatchID():
+                        client_batch_id_link = get_link(
+                            batch.absolute_url(), batch.getClientBatchID()
+                        )
 
                 data_point = [
                     {
@@ -224,7 +225,8 @@ class Report(BrowserView):
                     },
                     {
                         "value": analysis.getFormattedResult(),
-                        "class": "float",
+                        "class": "text",
+                        "style": "text-align:right",
                     },
                     {
                         "value": sample_link,

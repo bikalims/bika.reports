@@ -84,14 +84,16 @@
             <metal:block tal:repeat="line datalines">
                 <tr>
                     <tal:column repeat="i python:range(len(line))">
-                        <td class="" colspan=""
+                        <td class="" colspan="" style=""
                               tal:define="
                                 img_before python:line[i].get('img_before', None);
                                 img_after python:line[i].get('img_after', None);
                                 colspan python:line[i].get('colspan', 1);
-                                class python:line[i].get('class')"
+                                class python:line[i].get('class');
+                                style python:line[i].get('style')"
                              tal:attributes="
                                 class class;
+                                style style;
                                 colspan colspan">
                             <tal:img tal:condition="img_before">
                                 <img src=""
