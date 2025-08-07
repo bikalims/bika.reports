@@ -65,9 +65,8 @@ class Report(BrowserView):
                 _("Date"),
                 _("Result"),
                 _("Sample ID"),
-                _("Client"),
-                _("Sample Point"),
-                _("Sample Type"),
+                _("Batch ID"),
+                _("Client Batch ID"),
             ],
             "class": "",
         }
@@ -112,19 +111,6 @@ class Report(BrowserView):
             analysis = api.get_object(analysis)
             if not analysis.getResult():
                 continue
-            sample_point_link = ""
-            if analysis.getSamplePoint():
-                sample_point = analysis.getSamplePoint()
-                sample_point_title = sample_point.Title()
-                sample_point_url = sample_point.absolute_url()
-                sample_point_link = get_link(sample_point_url, sample_point_title)
-
-            sample_type_link = ""
-            if analysis.getSampleType():
-                sample_type = analysis.getSampleType()
-                sample_type_title = sample_type.Title()
-                sample_type_url = sample_type.absolute_url()
-                sample_type_link = get_link(sample_type_url, sample_type_title)
 
             # Links
             analysis_link = get_link(analysis.absolute_url(), analysis.Title())
@@ -132,8 +118,15 @@ class Report(BrowserView):
             sample = analysis.aq_parent
             sample_link = get_link(sample.absolute_url(), sample.Title())
 
-            client = analysis.getClient()
-            client_link = get_link(client.absolute_url(), client.Title())
+            batch_id_link = ""
+            client_batch_id_link = ""
+            if analysis.aq_parent.getBatch():
+                batch = analysis.aq_parent.getBatch()
+                batch_id_link = get_link(batch.absolute_url(), batch.getId())
+                if batch.getClientBatchID():
+                    client_batch_id_link = get_link(
+                        batch.absolute_url(), batch.getClientBatchID()
+                    )
 
             data_point = [
                 {
@@ -145,23 +138,20 @@ class Report(BrowserView):
                     "class": "date",
                 },
                 {
-                    "value": analysis.getResult(),
-                    "class": "float",
+                    "value": analysis.getFormattedResult(),
+                    "class": "text",
+                    "style": "text-align:right",
                 },
                 {
                     "value": sample_link,
                     "class": "text",
                 },
                 {
-                    "value": client_link,
+                    "value": batch_id_link,
                     "class": "text",
                 },
                 {
-                    "value": sample_point_link,
-                    "class": "text",
-                },
-                {
-                    "value": sample_type_link,
+                    "value": client_batch_id_link,
                     "class": "text",
                 },
             ]
@@ -207,19 +197,6 @@ class Report(BrowserView):
                 analysis = api.get_object(analysis)
                 if not analysis.getResult():
                     continue
-                sample_point_link = ""
-                if analysis.getSamplePoint():
-                    sample_point = analysis.getSamplePoint()
-                    sample_point_title = sample_point.Title()
-                    sample_point_url = sample_point.absolute_url()
-                    sample_point_link = get_link(sample_point_url, sample_point_title)
-
-                sample_type_link = ""
-                if analysis.getSampleType():
-                    sample_type = analysis.getSampleType()
-                    sample_type_title = sample_type.Title()
-                    sample_type_url = sample_type.absolute_url()
-                    sample_type_link = get_link(sample_type_url, sample_type_title)
 
                 # Links
                 analysis_link = get_link(analysis.absolute_url(), analysis.Title())
@@ -227,8 +204,15 @@ class Report(BrowserView):
                 sample = analysis.aq_parent
                 sample_link = get_link(sample.absolute_url(), sample.Title())
 
-                client = analysis.getClient()
-                client_link = get_link(client.absolute_url(), client.Title())
+                batch_id_link = ""
+                client_batch_id_link = ""
+                if analysis.aq_parent.getBatch():
+                    batch = analysis.aq_parent.getBatch()
+                    batch_id_link = get_link(batch.absolute_url(), batch.getId())
+                    if batch.getClientBatchID():
+                        client_batch_id_link = get_link(
+                            batch.absolute_url(), batch.getClientBatchID()
+                        )
 
                 data_point = [
                     {
@@ -240,23 +224,20 @@ class Report(BrowserView):
                         "class": "date",
                     },
                     {
-                        "value": analysis.getResult(),
-                        "class": "float",
+                        "value": analysis.getFormattedResult(),
+                        "class": "text",
+                        "style": "text-align:right",
                     },
                     {
                         "value": sample_link,
                         "class": "text",
                     },
                     {
-                        "value": client_link,
+                        "value": batch_id_link,
                         "class": "text",
                     },
                     {
-                        "value": sample_point_link,
-                        "class": "text",
-                    },
-                    {
-                        "value": sample_type_link,
+                        "value": client_batch_id_link,
                         "class": "text",
                     },
                 ]
@@ -276,7 +257,6 @@ class Report(BrowserView):
             heading += " {}".format(self.headings["analysis"])
         if self.headings["second_analysis"]:
             heading += " and {}".format(self.headings["second_analysis"])
-        heading += " Results {}".format(self.date.strftime("%B %Y"))
         self.headings["header"] = heading
 
         # # ParamHeading
@@ -540,13 +520,10 @@ class Report(BrowserView):
         if not date_query:
             return
         query["getResultCaptureDate"] = date_query
-        if (
-            len([param for param in out_params if param["title"] == _("Analyized")])
-            == 0
-        ):
+        if len([param for param in out_params if param["title"] == _("Analyzed")]) == 0:
             out_params.append(
                 {
-                    "title": _("Analyized"),
+                    "title": _("Analyzed"),
                     "value": formatDateParms(self.context, "DateResultCapture"),
                     "type": "text",
                 }
