@@ -139,6 +139,7 @@ class Report(BrowserView):
                 },
                 {
                     "value": analysis.getFormattedResult(),
+                    "bare_value": analysis.getResult(),
                     "class": "text",
                     "style": "text-align:right",
                 },
@@ -225,6 +226,7 @@ class Report(BrowserView):
                     },
                     {
                         "value": analysis.getFormattedResult(),
+                        "bare_value": analysis.getResult(),
                         "class": "text",
                         "style": "text-align:right",
                     },
