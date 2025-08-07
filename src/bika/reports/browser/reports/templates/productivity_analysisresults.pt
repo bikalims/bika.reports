@@ -29,9 +29,9 @@
   ">
   <div class="page">
 
-    <h1 class="header" tal:condition="python:report_headers.has_key('header')">
+    <h2 class="header" tal:condition="python:report_headers.has_key('header')">
         <span tal:content="python:report_headers['header']"/>
-    </h1>
+    </h2>
     <p class="subheader" tal:condition="python:report_headers.has_key('subheader')">
     <span tal:content="python:report_headers['subheader']"/>
     </p>
