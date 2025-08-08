@@ -101,7 +101,8 @@
                                 &nbsp
                             </tal:img>
 
-                            <span tal:content="structure python: line[i]['value']" style="font-size:14px"/>
+                            <span tal:content="structure python: line[i]['value']" style=""
+                                  tal:attributes="style style" />
 
                             <tal:img tal:condition="img_after">
                                 <img src=""
