@@ -135,6 +135,99 @@
             </li>
           </ul>
 
+          <h2 i18n:translate="">Clients</h2>
+          <ul id="toc-reports">
+            <li>
+              <a href="#" id="allclients_selector"
+                 i18n:translate="">All Clients</a><br/>
+              <span i18n:translate="">
+                All Clients
+              </span>
+
+              <div id="allclients" style="display:none"
+                   class="criteria">
+                <form action="createreport" method="post"
+                      tal:attributes="action string:${here/absolute_url}/createreport"
+                      name="administration_all_clients">
+                  <input type="hidden" name="report_id"
+                         value="administration_allclients"/>
+                  <input type="hidden"
+                         name="report_module"
+                         tal:attributes="value string:bika.extras.browser.reports.administration_allclients" />
+                  <fieldset>
+                    <tal:x content="structure context/@@selection_macros/select_output_format"/>
+                  </fieldset>
+                  <input tabindex=""
+                         class="searchButton allowMultiSubmit"
+                         type="submit"
+                         name="submit"
+                         value="Generate report"
+                         i18n:attributes="value"/>
+                </form>
+              </div>
+            </li>
+            <li>
+              <a href="#" id="clientcontacts_selector"
+                 i18n:translate="">Client Contacts</a><br/>
+              <span i18n:translate="">
+                Client contacts
+              </span>
+
+              <div id="clientcontacts" style="display:none"
+                   class="criteria">
+                <form action="createreport" method="post"
+                      tal:attributes="action string:${here/absolute_url}/createreport"
+                      name="administration_client_contacts">
+                  <input type="hidden" name="report_id"
+                         value="administration_clientcontacts"/>
+                  <input type="hidden"
+                         name="report_module"
+                         tal:attributes="value string:bika.extras.browser.reports.administration_clientcontacts" />
+                  <fieldset>
+                    <tal:x content="structure context/@@selection_macros/select_client"/>
+                    <tal:x content="structure context/@@selection_macros/select_output_format"/>
+                  </fieldset>
+                  <input tabindex=""
+                         class="searchButton allowMultiSubmit"
+                         type="submit"
+                         name="submit"
+                         value="Generate report"
+                         i18n:attributes="value"/>
+                </form>
+              </div>
+            </li>
+            <li>
+              <a href="#" id="clientsamplepoints_selector"
+                 i18n:translate="">Client Sample Points</a><br/>
+              <span i18n:translate="">
+                Client Sample Points
+              </span>
+
+              <div id="clientsamplepoints" style="display:none"
+                   class="criteria">
+                <form action="createreport" method="post"
+                      tal:attributes="action string:${here/absolute_url}/createreport"
+                      name="administration_client_sample_points">
+                  <input type="hidden" name="report_id"
+                         value="administration_clientsamplepoints"/>
+                  <input type="hidden"
+                         name="report_module"
+                         tal:attributes="value string:bika.extras.browser.reports.administration_clientsamplepoints" />
+                  <fieldset>
+                    <tal:x content="structure context/@@selection_macros/select_client"/>
+                    <tal:x content="structure context/@@selection_macros/select_output_format"/>
+                  </fieldset>
+                  <input tabindex=""
+                         class="searchButton allowMultiSubmit"
+                         type="submit"
+                         name="submit"
+                         value="Generate report"
+                         i18n:attributes="value"/>
+                </form>
+              </div>
+            </li>
+          </ul>
+
           <h2 i18n:translate="">Traceability</h2>
           <ul id="toc-reports">
             <li>
