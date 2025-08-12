@@ -97,6 +97,7 @@
 
       <div>
         <fieldset>
+          <!--
           <h2 i18n:translate="">Analyses related reports</h2>
           <ul id="toc-reports">
             <li>
@@ -134,6 +135,7 @@
               </div>
             </li>
           </ul>
+          -->
 
           <h2 i18n:translate="">Clients</h2>
           <ul id="toc-reports">
@@ -151,9 +153,6 @@
                       name="administration_all_clients">
                   <input type="hidden" name="report_id"
                          value="administration_allclients"/>
-                  <input type="hidden"
-                         name="report_module"
-                         tal:attributes="value string:bika.extras.browser.reports.administration_allclients" />
                   <fieldset>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
                   </fieldset>
@@ -180,9 +179,6 @@
                       name="administration_client_contacts">
                   <input type="hidden" name="report_id"
                          value="administration_clientcontacts"/>
-                  <input type="hidden"
-                         name="report_module"
-                         tal:attributes="value string:bika.extras.browser.reports.administration_clientcontacts" />
                   <fieldset>
                     <tal:x content="structure context/@@selection_macros/select_client"/>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
@@ -210,9 +206,6 @@
                       name="administration_client_sample_points">
                   <input type="hidden" name="report_id"
                          value="administration_clientsamplepoints"/>
-                  <input type="hidden"
-                         name="report_module"
-                         tal:attributes="value string:bika.extras.browser.reports.administration_clientsamplepoints" />
                   <fieldset>
                     <tal:x content="structure context/@@selection_macros/select_client"/>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
@@ -228,6 +221,7 @@
             </li>
           </ul>
 
+          <!--
           <h2 i18n:translate="">Traceability</h2>
           <ul id="toc-reports">
             <li>
@@ -260,6 +254,7 @@
               </div>
             </li>
           </ul>
+        -->
         </fieldset>
       </div>
     </metal:content-core>
