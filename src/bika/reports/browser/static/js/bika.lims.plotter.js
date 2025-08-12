@@ -85,7 +85,7 @@
             point = ref[k];
             lineData.points.push({
               x: new Date(point.x.value),
-              y: parseFloat(point.y.value)
+              y: parseFloat(point.y.bare_value)
             });
           }
           if (useRightAxis) {

@@ -65,13 +65,14 @@ class Report(BrowserView):
                 _("Date"),
                 _("Result"),
                 _("Sample ID"),
-                _("Client"),
-                _("Sample Point"),
-                _("Sample Type"),
+                _("Batch ID"),
+                _("Client Batch ID"),
             ],
             "class": "",
         }
         self.plot_enabled = True
+        self.analysis_color = "red"
+        self.second_analysis_color = "blue"
 
     def __call__(self):
         parms = []
@@ -112,28 +113,29 @@ class Report(BrowserView):
             analysis = api.get_object(analysis)
             if not analysis.getResult():
                 continue
-            sample_point_link = ""
-            if analysis.getSamplePoint():
-                sample_point = analysis.getSamplePoint()
-                sample_point_title = sample_point.Title()
-                sample_point_url = sample_point.absolute_url()
-                sample_point_link = get_link(sample_point_url, sample_point_title)
-
-            sample_type_link = ""
-            if analysis.getSampleType():
-                sample_type = analysis.getSampleType()
-                sample_type_title = sample_type.Title()
-                sample_type_url = sample_type.absolute_url()
-                sample_type_link = get_link(sample_type_url, sample_type_title)
 
             # Links
-            analysis_link = get_link(analysis.absolute_url(), analysis.Title())
+            link_style = "color:{}".format(self.analysis_color)
+            analysis_link = self.get_styled_link(
+                analysis.absolute_url(), analysis.Title(), link_style
+            )
 
             sample = analysis.aq_parent
-            sample_link = get_link(sample.absolute_url(), sample.Title())
+            sample_link = self.get_styled_link(
+                sample.absolute_url(), sample.Title(), link_style
+            )
 
-            client = analysis.getClient()
-            client_link = get_link(client.absolute_url(), client.Title())
+            batch_id_link = ""
+            client_batch_id_link = ""
+            if analysis.aq_parent.getBatch():
+                batch = analysis.aq_parent.getBatch()
+                batch_id_link = self.get_styled_link(
+                    batch.absolute_url(), batch.getId(), link_style
+                )
+                if batch.getClientBatchID():
+                    client_batch_id_link = self.get_styled_link(
+                        batch.absolute_url(), batch.getClientBatchID(), link_style
+                    )
 
             data_point = [
                 {
@@ -145,23 +147,21 @@ class Report(BrowserView):
                     "class": "date",
                 },
                 {
-                    "value": analysis.getResult(),
-                    "class": "float",
+                    "value": analysis.getFormattedResult(),
+                    "bare_value": analysis.getResult(),
+                    "class": "text",
+                    "style": "text-align:right",
                 },
                 {
                     "value": sample_link,
                     "class": "text",
                 },
                 {
-                    "value": client_link,
+                    "value": batch_id_link,
                     "class": "text",
                 },
                 {
-                    "value": sample_point_link,
-                    "class": "text",
-                },
-                {
-                    "value": sample_type_link,
+                    "value": client_batch_id_link,
                     "class": "text",
                 },
             ]
@@ -207,28 +207,29 @@ class Report(BrowserView):
                 analysis = api.get_object(analysis)
                 if not analysis.getResult():
                     continue
-                sample_point_link = ""
-                if analysis.getSamplePoint():
-                    sample_point = analysis.getSamplePoint()
-                    sample_point_title = sample_point.Title()
-                    sample_point_url = sample_point.absolute_url()
-                    sample_point_link = get_link(sample_point_url, sample_point_title)
-
-                sample_type_link = ""
-                if analysis.getSampleType():
-                    sample_type = analysis.getSampleType()
-                    sample_type_title = sample_type.Title()
-                    sample_type_url = sample_type.absolute_url()
-                    sample_type_link = get_link(sample_type_url, sample_type_title)
 
                 # Links
-                analysis_link = get_link(analysis.absolute_url(), analysis.Title())
+                link_style = "color:{}".format(self.second_analysis_color)
+                analysis_link = self.get_styled_link(
+                    analysis.absolute_url(), analysis.Title(), link_style
+                )
 
                 sample = analysis.aq_parent
-                sample_link = get_link(sample.absolute_url(), sample.Title())
+                sample_link = self.get_styled_link(
+                    sample.absolute_url(), sample.Title(), link_style
+                )
 
-                client = analysis.getClient()
-                client_link = get_link(client.absolute_url(), client.Title())
+                batch_id_link = ""
+                client_batch_id_link = ""
+                if analysis.aq_parent.getBatch():
+                    batch = analysis.aq_parent.getBatch()
+                    batch_id_link = self.get_styled_link(
+                        batch.absolute_url(), batch.getId(), link_style
+                    )
+                    if batch.getClientBatchID():
+                        client_batch_id_link = self.get_styled_link(
+                            batch.absolute_url(), batch.getClientBatchID(), link_style
+                        )
 
                 data_point = [
                     {
@@ -240,23 +241,21 @@ class Report(BrowserView):
                         "class": "date",
                     },
                     {
-                        "value": analysis.getResult(),
-                        "class": "float",
+                        "value": analysis.getFormattedResult(),
+                        "bare_value": analysis.getResult(),
+                        "class": "text",
+                        "style": "text-align:right",
                     },
                     {
                         "value": sample_link,
                         "class": "text",
                     },
                     {
-                        "value": client_link,
+                        "value": batch_id_link,
                         "class": "text",
                     },
                     {
-                        "value": sample_point_link,
-                        "class": "text",
-                    },
-                    {
-                        "value": sample_type_link,
+                        "value": client_batch_id_link,
                         "class": "text",
                     },
                 ]
@@ -276,7 +275,6 @@ class Report(BrowserView):
             heading += " {}".format(self.headings["analysis"])
         if self.headings["second_analysis"]:
             heading += " and {}".format(self.headings["second_analysis"])
-        heading += " Results {}".format(self.date.strftime("%B %Y"))
         self.headings["header"] = heading
 
         # # ParamHeading
@@ -302,7 +300,7 @@ class Report(BrowserView):
             title = api.get_object(self.request.form.get("ServiceUID")).title
             plot_data = [
                 {
-                    "plot_color": "red",
+                    "plot_color": self.analysis_color,
                     "plot_type": "line",
                     "show_points": True,
                     "plot_points": plot_points,
@@ -317,7 +315,7 @@ class Report(BrowserView):
                 ).title
                 plot_data.append(
                     {
-                        "plot_color": "blue",
+                        "plot_color": self.second_analysis_color,
                         "plot_type": "line",
                         "show_points": True,
                         "plot_points": second_plot_points,
@@ -335,7 +333,12 @@ class Report(BrowserView):
                 results_range = analysis_spec.getResultsRange()
                 if results_range:
                     plot_data.extend(
-                        self.get_hline_plot_data(results_range, "ServiceUID")
+                        self.get_hline_plot_data(
+                            results_range,
+                            "ServiceUID",
+                            y_axis="left",
+                            plot_color=self.analysis_color,
+                        )
                     )
                     if self.request.form.get("SecondServiceUID"):
                         plot_data.extend(
@@ -343,7 +346,7 @@ class Report(BrowserView):
                                 results_range,
                                 "ServiceUID",
                                 y_axis="right",
-                                plot_color="blue",
+                                plot_color=self.second_analysis_color,
                             )
                         )
             self.plot_data = json.dumps(plot_data)
@@ -540,13 +543,10 @@ class Report(BrowserView):
         if not date_query:
             return
         query["getResultCaptureDate"] = date_query
-        if (
-            len([param for param in out_params if param["title"] == _("Analyized")])
-            == 0
-        ):
+        if len([param for param in out_params if param["title"] == _("Analyzed")]) == 0:
             out_params.append(
                 {
-                    "title": _("Analyized"),
+                    "title": _("Analyzed"),
                     "value": formatDateParms(self.context, "DateResultCapture"),
                     "type": "text",
                 }
@@ -577,3 +577,16 @@ class Report(BrowserView):
             'attachment;filename="analysesperservice_%s.csv"' % date,
         )
         self.request.RESPONSE.write(report_data)
+
+    def get_styled_link(self, url, title, style=""):
+        """
+        Create an html link and apply a style if provided
+        NOTE: style may have semi-colons but NO SPACES!!!!
+        """
+        link = get_link(url, title)
+        if style:
+            parts = link.split(" ")
+            parts.insert(2, 'style="{}"'.format(style))
+            link = " ".join(parts)
+        logger.info("styled link: {}".format(link))
+        return link

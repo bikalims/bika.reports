@@ -68,17 +68,19 @@
         var err, select_el, ts;
         select_el = el.childNodes[0].childNodes[3];
         try {
-          console.log("Select Element ID: " + select_el.id);
-          console.log("Already Enhanced: " + select_el.tomselect === !"undefined");
           ts = new TomSelect(select_el, {
             create: false,
             allowEmptyOption: true,
-            placeholder: "Choose an option"
+            placeholder: "Choose an option",
+            sortField: {
+              field: "text",
+              direction: "asc"
+            }
           });
           this.tomselects[select_el.id] = ts;
-          console.log("Wrapper: " + ts.wrapper);
-          console.log("Input: " + ts.input);
-          return console.log("TomSelect init worked " + select_el);
+          console.debug("Wrapper: " + ts.wrapper);
+          console.debug("Input: " + ts.input);
+          return console.debug("TomSelect init worked " + select_el);
         } catch (error) {
           err = error;
           return console.error("TomSelect init failed:", err);
@@ -169,22 +171,22 @@
       result = me.call_command(command);
       return result.then(function(data) {
         var add_empty, clear;
-        console.log('Items returned: ' + data.items.length);
+        console.debug('Items returned: ' + data.items.length);
         me.populate_dropdown('SamplePointUID', data.items, clear = true, add_empty = true);
         command = 'search?portal_type=SampleType';
         result = me.call_command(command);
         return result.then(function(data) {
-          console.log('Items returned: ' + data.items.length);
+          console.debug('Items returned: ' + data.items.length);
           me.populate_dropdown('SampleTypeUID', data.items, clear = true, add_empty = true);
           command = 'search?portal_type=AnalysisSpec';
           result = me.call_command(command);
           return result.then(function(data) {
-            console.log('Items returned: ' + data.items.length);
+            console.debug('Items returned: ' + data.items.length);
             me.populate_dropdown('analysis_spec', data.items, clear = true, add_empty = true);
             command = 'search?portal_type=AnalysisService';
             result = me.call_command(command);
             return result.then(function(data) {
-              console.log('Items returned: ' + data.items.length);
+              console.debug('Items returned: ' + data.items.length);
               me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
               return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
             });
@@ -204,7 +206,7 @@
         result = me.call_command(command, limit = 0);
         return result.then(function(data) {
           var j, len, sample_type_uid, sample_type_uids;
-          console.log('Items returned: ' + data.items.length);
+          console.debug('Items returned: ' + data.items.length);
           command = 'search?portal_type=SampleType';
           sample_type_uids = me.get_object_values('sample_types', data.items);
           if (sample_type_uids) {
@@ -218,17 +220,17 @@
           result = me.call_command(command);
           return result.then(function(data) {
             var add_empty, clear;
-            console.log('Items returned: ' + data.items.length);
+            console.debug('Items returned: ' + data.items.length);
             me.populate_dropdown('SampleTypeUID', data.items, clear = true, add_empty = true);
             command = 'search?portal_type=AnalysisSpec';
             result = me.call_command(command);
             return result.then(function(data) {
-              console.log('Items returned: ' + data.items.length);
+              console.debug('Items returned: ' + data.items.length);
               me.populate_dropdown('analysis_spec', data.items, clear = true, add_empty = true);
               command = 'search?portal_type=AnalysisService';
               result = me.call_command(command);
               return result.then(function(data) {
-                console.log('Items returned: ' + data.items.length);
+                console.debug('Items returned: ' + data.items.length);
                 me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
                 return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
               });
@@ -252,12 +254,12 @@
       result = me.call_command(command);
       return result.then(function(data) {
         var add_empty, clear;
-        console.log('Items returned: ' + data.items.length);
+        console.debug('Items returned: ' + data.items.length);
         me.populate_dropdown('analysis_spec', data.items, clear = true, add_empty = true);
         command = 'search?portal_type=AnalysisService';
         result = me.call_command(command);
         return result.then(function(data) {
-          console.log('Items returned: ' + data.items.length);
+          console.debug('Items returned: ' + data.items.length);
           me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
           return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
         });
@@ -285,7 +287,7 @@
             result = me.call_command(command);
             return result.then(function(data) {
               var add_empty, clear;
-              console.log('Items returned: ' + data.items.length);
+              console.debug('Items returned: ' + data.items.length);
               me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
               return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
             });
@@ -297,7 +299,7 @@
         result = me.call_command(command);
         return result.then(function(data) {
           var add_empty, clear;
-          console.log('Items returned: ' + data.items.length);
+          console.debug('Items returned: ' + data.items.length);
           me.populate_dropdown('ServiceUID', data.items, clear = true, add_empty = false);
           return me.populate_dropdown('SecondServiceUID', data.items, clear = true, add_empty = true);
         });
@@ -309,7 +311,7 @@
       /**
        * Event handler when dropdown changed
        */
-      console.log("°°° ReportFolderView::on_dropdown_change on e " + e.id + " °°°");
+      console.debug("°°° ReportFolderView::on_dropdown_change on e " + e.id + " °°°");
       if (e.currentTarget) {
         $el = $(e.currentTarget);
       } else {
