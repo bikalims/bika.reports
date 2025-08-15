@@ -44,6 +44,7 @@ class window.ReportFolderView
           create: false
           allowEmptyOption: true
           placeholder: "Choose an option"
+          maxOptions: null
           sortField: {
             field: "text"
             direction: "asc"
