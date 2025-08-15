@@ -18,14 +18,17 @@
 # Copyright 2018-2021 by it's authors.
 # Some rights reserved, see README and LICENSE.
 
-from Products.CMFCore.utils import getToolByName
-from zope.i18n import translate
-from bika.lims.browser import BrowserView
-from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
-from bika.lims.utils import getUsers
-from bika.lims import bikaMessageFactory as _
-from plone.memoize import ram
 from time import time
+from Products.CMFCore.utils import getToolByName
+from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from plone.memoize import ram
+from zope.i18n import translate
+
+from bika.lims import api
+from bika.lims import bikaMessageFactory as _
+from bika.lims.browser import BrowserView
+from bika.lims.utils import getUsers
+from senaite.core.catalog import CLIENT_CATALOG
 
 
 def update_timer():
@@ -333,7 +336,9 @@ class SelectionMacrosView(BrowserView):
     @ram.cache(_cache_key_select_client)
     def select_client(self, style=None):
         self.style = style
-        self.clients = self.pc(portal_type="Client", sort_on="sortable_title")
+        client_catalog = api.get_tool(CLIENT_CATALOG)
+        self.clients = client_catalog(
+            portal_type="Client", sort_on="sortable_title")
         return self.select_client_pt()
 
     def parse_client(self, request):
@@ -359,7 +364,8 @@ class SelectionMacrosView(BrowserView):
 
     select_daterange_pt = ViewPageTemplateFile("select_daterange.pt")
 
-    def _select_daterange(self, field_id, field_title, style=None,
+    def _select_daterange(
+            self, field_id, field_title, style=None,
             default_value=None, to_default_value=None):
         self.style = style
         self.field_id = field_id
@@ -386,7 +392,7 @@ class SelectionMacrosView(BrowserView):
         to_default_value=None
     ):
         return self._select_daterange(
-                field_id, field_title, style, default_value, to_default_value)
+            field_id, field_title, style, default_value, to_default_value)
 
     # @ram.cache(_cache_key_select_daterange)
     def select_daterange_published(self, field_id, field_title, style=None):
