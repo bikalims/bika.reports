@@ -88,7 +88,16 @@ class Report(BrowserView):
         self.add_filter_by_service(query=query, out_params=parms)
 
         # Filter by Specification UID
-        self.add_filter_by_specification(query=query, out_params=parms)
+        spec_range = None
+        if self.request.form.get("analysis_spec", ""):
+            # get specification for analaysis
+            # find upper and lower limits
+            # create hlines for them
+            # append to plot_data
+            analysis_spec = api.get_object(self.request.form.get("analysis_spec"))
+            results_range = analysis_spec.getResultsRange()
+            spec_range = self.get_spec_range(results_range, "ServiceUID")
+            self.add_filter_by_specification(query=query, out_params=parms)
 
         # Filter by SamplePoint
         self.add_filter_by_samplepoint(query=query, out_params=parms)
@@ -137,6 +146,15 @@ class Report(BrowserView):
                         batch.absolute_url(), batch.getClientBatchID(), link_style
                     )
 
+            # do not plot points outside of the detection limis
+            bare_value = analysis.getResult()
+            if analysis.getLowerDetectionLimit():
+                if float(bare_value) < float(analysis.getLowerDetectionLimit()):
+                    bare_value = analysis.getLowerDetectionLimit()
+            if analysis.getUpperDetectionLimit():
+                if float(bare_value) > float(analysis.getUpperDetectionLimit()):
+                    bare_value = analysis.getUpperDetectionLimit()
+
             data_point = [
                 {
                     "value": analysis_link,
@@ -148,7 +166,7 @@ class Report(BrowserView):
                 },
                 {
                     "value": analysis.getFormattedResult(),
-                    "bare_value": analysis.getResult(),
+                    "bare_value": bare_value,
                     "class": "text",
                     "style": "text-align:right",
                 },
@@ -329,22 +347,21 @@ class Report(BrowserView):
                 # find upper and lower limits
                 # create hlines for them
                 # append to plot_data
-                analysis_spec = api.get_object(self.request.form.get("analysis_spec"))
-                results_range = analysis_spec.getResultsRange()
                 if results_range:
                     plot_data.extend(
                         self.get_hline_plot_data(
-                            results_range,
-                            "ServiceUID",
+                            spec_range,
                             y_axis="left",
                             plot_color=self.analysis_color,
                         )
                     )
                     if self.request.form.get("SecondServiceUID"):
+                        spec_range = self.get_spec_range(
+                            results_range, "SecondServiceUID"
+                        )
                         plot_data.extend(
                             self.get_hline_plot_data(
-                                results_range,
-                                "ServiceUID",
+                                spec_range,
                                 y_axis="right",
                                 plot_color=self.second_analysis_color,
                             )
@@ -374,10 +391,7 @@ class Report(BrowserView):
             "plot_data": self.plot_data,
         }
 
-    def get_hline_plot_data(
-        self, results_range, service_fieldname, y_axis="left", plot_color="red"
-    ):
-        plot_data = []
+    def get_spec_range(self, results_range, service_fieldname):
         service = api.get_object(self.request.form.get(service_fieldname))
         an_range = []
         for ar in results_range:
@@ -393,38 +407,42 @@ class Report(BrowserView):
                 len(an_range), service.Title()
             )
         )
-        if an_range:
-            an_range = an_range[0]
-            spec_min = an_range.get("min")
-            if spec_min:
-                plot_data.append(
-                    {
-                        "plot_color": plot_color,
-                        "plot_type": "hline",
-                        "y_axis": y_axis,
-                        "show_points": False,
-                        "plot_points": [
-                            {
-                                "y": {"type": "float", "value": spec_min},
-                            },
-                        ],
-                    }
-                )
-            spec_max = an_range.get("max")
-            if spec_max:
-                plot_data.append(
-                    {
-                        "plot_color": plot_color,
-                        "plot_type": "hline",
-                        "y_axis": y_axis,
-                        "show_points": False,
-                        "plot_points": [
-                            {
-                                "y": {"type": "float", "value": spec_max},
-                            },
-                        ],
-                    }
-                )
+        result = {"min": None, "max": None}
+        if an_range > 0:
+            result["min"] = an_range[0].get("min")
+            result["max"] = an_range[0].get("max")
+        return result
+
+    def get_hline_plot_data(self, spec_range, y_axis="left", plot_color="red"):
+        plot_data = []
+        if spec_range.get("min"):
+            plot_data.append(
+                {
+                    "plot_color": plot_color,
+                    "plot_type": "hline",
+                    "y_axis": y_axis,
+                    "show_points": False,
+                    "plot_points": [
+                        {
+                            "y": {"type": "float", "value": spec_range["min"]},
+                        },
+                    ],
+                }
+            )
+        if spec_range.get("max"):
+            plot_data.append(
+                {
+                    "plot_color": plot_color,
+                    "plot_type": "hline",
+                    "y_axis": y_axis,
+                    "show_points": False,
+                    "plot_points": [
+                        {
+                            "y": {"type": "float", "value": spec_range["max"]},
+                        },
+                    ],
+                }
+            )
         return plot_data
 
     def add_filter_by_client(self, query, out_params):
