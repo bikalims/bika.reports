@@ -19,6 +19,7 @@
 # Some rights reserved, see README and LICENSE.
 
 import bs4
+import collections
 import importlib
 import os
 import urllib
@@ -33,14 +34,15 @@ from zope.interface import implements
 
 from bika.lims import api
 from bika.lims.browser import BrowserView
-from bika.lims.browser.bika_listing import BikaListingView
 from bika.lims.utils import getUsers
 from bika.lims.utils import logged_in_client
 from bika.lims.utils import createPdf
+
 from bika.reports import _
 from bika.reports.browser.reports.selection_macros import SelectionMacrosView
 from bika.reports.interfaces import IAdministrationReport
 from bika.reports.interfaces import IProductivityReport
+from senaite.app.listing import ListingView
 from senaite.core.catalog import REPORT_CATALOG
 
 
@@ -98,23 +100,16 @@ class AdministrationView(BrowserView):
         return self.template()
 
 
-class ReportHistoryView(BikaListingView):
+class ReportHistoryView(ListingView):
     """Report history form"""
-
-    implements(IViewView)
 
     def __init__(self, context, request):
         super(ReportHistoryView, self).__init__(context, request)
 
         self.catalog = REPORT_CATALOG
-
-        self.context_actions = {}
-
-        self.show_select_row = False
-        self.show_select_column = False
-        self.show_column_toggles = False
-        self.show_workflow_action_buttons = False
-        self.show_select_all_checkbox = False
+        self.contentFilter = {"portal_type": "Report", "sort_order": "reverse"}
+        self.show_select_row = True
+        self.show_select_column = True
         self.pagesize = 50
 
         self.icon = self.portal_url + "/++resource++bika.lims.images/report_big.png"
@@ -122,54 +117,55 @@ class ReportHistoryView(BikaListingView):
         self.description = ""
 
         # this is set up in call where member is authenticated
-        self.columns = {}
-        self.review_states = []
-
-    def __call__(self):
-        self.columns = {
-            "Title": {
+        self.columns = collections.OrderedDict((
+            ("Title", {
                 "title": _("Title"),
                 "attr": "Title",
-                "index": "title",
-            },
-            "file_size": {
+                "index": "title"}),
+            ("file_size", {
                 "title": _("Size"),
                 "attr": "getFileSize",
-                "sortable": False,
-            },
-            "created": {
+                "sortable": False}),
+            ("created", {
                 "title": _("Created"),
                 "attr": "created",
-                "index": "created",
-            },
-            "creator": {
+                "index": "created"}),
+            ("creator", {
                 "title": _("By"),
                 "attr": "getCreatorFullName",
-                "index": "Creator",
-            },
-        }
+                "index": "Creator"}),
+        ))
+
         self.review_states = [
             {
                 "id": "default",
-                "title": "All",
+                "title": _("Active"),
+                "contentFilter": {"is_active": True},
+                "columns": self.columns.keys(),
+            }, {
+                "id": "inactive",
+                "title": _("Inactive"),
+                "contentFilter": {"is_active": False},
+                "columns": self.columns.keys(),
+            }, {
+                "id": "all",
+                "title": _("All"),
                 "contentFilter": {},
-                "columns": ["Title", "file_size", "created", "creator"],
+                "columns": self.columns.keys(),
             },
         ]
-
-        self.contentFilter = {"portal_type": "Report", "sort_order": "reverse"}
 
         this_client = logged_in_client(self.context)
         if this_client:
             self.contentFilter["getClientUID"] = this_client.UID()
         else:
-            self.columns["client"] = {
-                "title": _("Client"),
-                "attr": "getClientTitle",
-                "replace_url": "getClientURL",
-            }
+            pass
+            # client_col = [("Client", {"title": _("Client"),
+            #                           "attr": "getClientURL"})]
+            # self.columns.update(client_col)
+            # for i in range(len(self.review_states)):
+            #     self.review_states[i]["columns"].append("Client")
 
-        return super(ReportHistoryView, self).__call__()
 
     def lookupMime(self, name):
         mimetool = getToolByName(self, "mimetypes_registry")
@@ -180,7 +176,6 @@ class ReportHistoryView(BikaListingView):
             return name
 
     def folderitem(self, obj, item, index):
-        item = BikaListingView.folderitem(self, obj, item, index)
         # https://github.com/collective/uwosh.pfg.d2c/issues/20
         # https://github.com/collective/uwosh.pfg.d2c/pull/21
         item["replace"]["Title"] = "<a href='%s/ReportFile'>%s</a>" % (

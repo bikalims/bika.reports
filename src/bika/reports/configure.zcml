@@ -16,9 +16,8 @@
   -->
   <!--<includeDependencies package="." />-->
   <include package="senaite.core.permissions" />
-
   <include package=".browser" />
-
+  <include package=".upgrade"/>
   <include file="permissions.zcml" />
 
   <genericsetup:registerProfile
