@@ -73,6 +73,10 @@ class Report(BrowserView):
         self.plot_enabled = True
         self.analysis_color = "red"
         self.second_analysis_color = "blue"
+        self.ldl_color = "brown"
+        self.udl_color = "brown"
+        self.second_ldl_color = "green"
+        self.second_udl_color = "green"
 
     def __call__(self):
         parms = []
@@ -118,6 +122,10 @@ class Report(BrowserView):
         analyses = api.search(query, ANALYSIS_CATALOG)
         logger.info("Select analysis-results found {} results".format(len(analyses)))
         plot_points = []
+        plot_ldl_line = False
+        plot_ldl_value = None
+        plot_udl_line = False
+        plot_udl_value = None
         for analysis in analyses:
             analysis = api.get_object(analysis)
             if not analysis.getResult():
@@ -146,14 +154,18 @@ class Report(BrowserView):
                         batch.absolute_url(), batch.getClientBatchID(), link_style
                     )
 
-            # do not plot points outside of the detection limis
+            # plot limit line if outside limits
             bare_value = analysis.getResult()
             if analysis.getLowerDetectionLimit():
                 if float(bare_value) < float(analysis.getLowerDetectionLimit()):
-                    bare_value = analysis.getLowerDetectionLimit()
+                    # bare_value = analysis.getLowerDetectionLimit()
+                    plot_ldl_line = True
+                    plot_ldl_value = analysis.getLowerDetectionLimit()
             if analysis.getUpperDetectionLimit():
                 if float(bare_value) > float(analysis.getUpperDetectionLimit()):
-                    bare_value = analysis.getUpperDetectionLimit()
+                    # bare_value = analysis.getUpperDetectionLimit()
+                    plot_udl_line = True
+                    plot_udl_value = analysis.getUpperDetectionLimit()
 
             data_point = [
                 {
@@ -188,6 +200,10 @@ class Report(BrowserView):
             total_count += 1
 
         second_plot_points = []
+        second_plot_ldl_line = False
+        second_plot_ldl_value = None
+        second_plot_udl_line = False
+        second_plot_udl_value = None
         if self.request.form.get("SecondServiceUID"):
             query = dict(
                 portal_type="Analysis",
@@ -249,6 +265,23 @@ class Report(BrowserView):
                             batch.absolute_url(), batch.getClientBatchID(), link_style
                         )
 
+                # plot limit line if outside limits
+                second_bare_value = analysis.getResult()
+                if analysis.getLowerDetectionLimit():
+                    if float(second_bare_value) < float(
+                        analysis.getLowerDetectionLimit()
+                    ):
+                        # second_bare_value = analysis.getLowerDetectionLimit()
+                        second_plot_ldl_line = True
+                        second_plot_ldl_value = analysis.getLowerDetectionLimit()
+                if analysis.getUpperDetectionLimit():
+                    if float(second_bare_value) > float(
+                        analysis.getUpperDetectionLimit()
+                    ):
+                        # second_bare_value = analysis.getUpperDetectionLimit()
+                        second_plot_udl_line = True
+                        second_plot_udl_value = analysis.getLowerDetectionLimit()
+
                 data_point = [
                     {
                         "value": analysis_link,
@@ -260,7 +293,7 @@ class Report(BrowserView):
                     },
                     {
                         "value": analysis.getFormattedResult(),
-                        "bare_value": analysis.getResult(),
+                        "bare_value": second_bare_value,
                         "class": "text",
                         "style": "text-align:right",
                     },
@@ -327,6 +360,24 @@ class Report(BrowserView):
                     "left_axis_title": title,
                 }
             ]
+            if plot_ldl_line:
+                plot_data.append(
+                    self.get_hline_plot_data(
+                        plot_ldl_value,
+                        y_axis="left",
+                        plot_color=self.ldl_color,
+                        line_style="dashed",
+                    )
+                )
+            if plot_udl_line:
+                plot_data.append(
+                    self.get_hline_plot_data(
+                        plot_udl_value,
+                        y_axis="left",
+                        plot_color=self.udl_color,
+                        line_style="dashed",
+                    )
+                )
             if len(second_plot_points):
                 second_title = api.get_object(
                     self.request.form.get("SecondServiceUID")
@@ -342,30 +393,67 @@ class Report(BrowserView):
                         "right_axis_title": second_title,
                     }
                 )
+                if second_plot_ldl_line:
+                    plot_data.append(
+                        self.get_hline_plot_data(
+                            second_plot_ldl_value,
+                            y_axis="right",
+                            plot_color=self.second_ldl_color,
+                            line_style="dashed",
+                        )
+                    )
+                if second_plot_udl_line:
+                    plot_data.append(
+                        self.get_hline_plot_data(
+                            second_plot_udl_value,
+                            y_axis="right",
+                            plot_color=self.second_udl_color,
+                            line_style="dashed",
+                        )
+                    )
+
             if self.request.form.get("analysis_spec", ""):
                 # get specification for analaysis
                 # find upper and lower limits
                 # create hlines for them
                 # append to plot_data
-                if results_range:
-                    plot_data.extend(
-                        self.get_hline_plot_data(
-                            spec_range,
-                            y_axis="left",
-                            plot_color=self.analysis_color,
-                        )
-                    )
-                    if self.request.form.get("SecondServiceUID"):
-                        spec_range = self.get_spec_range(
-                            results_range, "SecondServiceUID"
-                        )
-                        plot_data.extend(
+                if spec_range:
+                    if spec_range.get("min"):
+                        plot_data.append(
                             self.get_hline_plot_data(
-                                spec_range,
-                                y_axis="right",
-                                plot_color=self.second_analysis_color,
+                                spec_range.get("min"),
+                                y_axis="left",
+                                plot_color=self.analysis_color,
                             )
                         )
+                    if spec_range.get("max"):
+                        plot_data.append(
+                            self.get_hline_plot_data(
+                                spec_range.get("max"),
+                                y_axis="left",
+                                plot_color=self.analysis_color,
+                            )
+                        )
+                    if self.request.form.get("SecondServiceUID"):
+                        second_spec_range = self.get_spec_range(
+                            results_range, "SecondServiceUID"
+                        )
+                        if second_spec_range.get("min"):
+                            plot_data.append(
+                                self.get_hline_plot_data(
+                                    second_spec_range.get("min"),
+                                    y_axis="right",
+                                    plot_color=self.second_analysis_color,
+                                )
+                            )
+                        if second_spec_range.get("max"):
+                            plot_data.append(
+                                self.get_hline_plot_data(
+                                    second_spec_range.get("max"),
+                                    y_axis="right",
+                                    plot_color=self.second_analysis_color,
+                                )
+                            )
             self.plot_data = json.dumps(plot_data)
             logger.info("Plot: {}".format(self.plot_data))
 
@@ -413,37 +501,21 @@ class Report(BrowserView):
             result["max"] = an_range[0].get("max")
         return result
 
-    def get_hline_plot_data(self, spec_range, y_axis="left", plot_color="red"):
-        plot_data = []
-        if spec_range.get("min"):
-            plot_data.append(
+    def get_hline_plot_data(
+        self, val, y_axis="left", plot_color="red", line_style="dotted"
+    ):
+        return {
+            "plot_color": plot_color,
+            "plot_type": "hline",
+            "y_axis": y_axis,
+            "show_points": False,
+            "line_style": line_style,
+            "plot_points": [
                 {
-                    "plot_color": plot_color,
-                    "plot_type": "hline",
-                    "y_axis": y_axis,
-                    "show_points": False,
-                    "plot_points": [
-                        {
-                            "y": {"type": "float", "value": spec_range["min"]},
-                        },
-                    ],
-                }
-            )
-        if spec_range.get("max"):
-            plot_data.append(
-                {
-                    "plot_color": plot_color,
-                    "plot_type": "hline",
-                    "y_axis": y_axis,
-                    "show_points": False,
-                    "plot_points": [
-                        {
-                            "y": {"type": "float", "value": spec_range["max"]},
-                        },
-                    ],
-                }
-            )
-        return plot_data
+                    "y": {"type": "float", "value": val},
+                },
+            ],
+        }
 
     def add_filter_by_client(self, query, out_params):
         """Applies the filter by client to the search query"""
