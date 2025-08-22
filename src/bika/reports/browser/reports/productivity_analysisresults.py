@@ -358,12 +358,14 @@ class Report(BrowserView):
                     "y_axis": "left",
                     "line_style": "solid",
                     "left_axis_title": title,
+                    "legend_label": title,
                 }
             ]
             if plot_ldl_line:
                 plot_data.append(
                     self.get_hline_plot_data(
                         plot_ldl_value,
+                        title="LDL",
                         y_axis="left",
                         plot_color=self.ldl_color,
                         line_style="dashed",
@@ -373,6 +375,7 @@ class Report(BrowserView):
                 plot_data.append(
                     self.get_hline_plot_data(
                         plot_udl_value,
+                        title="UDL",
                         y_axis="left",
                         plot_color=self.udl_color,
                         line_style="dashed",
@@ -391,12 +394,14 @@ class Report(BrowserView):
                         "y_axis": "right",
                         "line_style": "solid",
                         "right_axis_title": second_title,
+                        "legend_label": second_title,
                     }
                 )
                 if second_plot_ldl_line:
                     plot_data.append(
                         self.get_hline_plot_data(
                             second_plot_ldl_value,
+                            title="LDL",
                             y_axis="right",
                             plot_color=self.second_ldl_color,
                             line_style="dashed",
@@ -406,6 +411,7 @@ class Report(BrowserView):
                     plot_data.append(
                         self.get_hline_plot_data(
                             second_plot_udl_value,
+                            title="UDL",
                             y_axis="right",
                             plot_color=self.second_udl_color,
                             line_style="dashed",
@@ -422,6 +428,7 @@ class Report(BrowserView):
                         plot_data.append(
                             self.get_hline_plot_data(
                                 spec_range.get("min"),
+                                title="Min",
                                 y_axis="left",
                                 plot_color=self.analysis_color,
                             )
@@ -430,6 +437,7 @@ class Report(BrowserView):
                         plot_data.append(
                             self.get_hline_plot_data(
                                 spec_range.get("max"),
+                                title="Max",
                                 y_axis="left",
                                 plot_color=self.analysis_color,
                             )
@@ -442,6 +450,7 @@ class Report(BrowserView):
                             plot_data.append(
                                 self.get_hline_plot_data(
                                     second_spec_range.get("min"),
+                                    title="Min",
                                     y_axis="right",
                                     plot_color=self.second_analysis_color,
                                 )
@@ -450,6 +459,7 @@ class Report(BrowserView):
                             plot_data.append(
                                 self.get_hline_plot_data(
                                     second_spec_range.get("max"),
+                                    title="Max",
                                     y_axis="right",
                                     plot_color=self.second_analysis_color,
                                 )
@@ -502,7 +512,7 @@ class Report(BrowserView):
         return result
 
     def get_hline_plot_data(
-        self, val, y_axis="left", plot_color="red", line_style="dotted"
+        self, val, title="dunno", y_axis="left", plot_color="red", line_style="dotted"
     ):
         return {
             "plot_color": plot_color,
@@ -515,6 +525,7 @@ class Report(BrowserView):
                     "y": {"type": "float", "value": val},
                 },
             ],
+            "legend_label": title,
         }
 
     def add_filter_by_client(self, query, out_params):
