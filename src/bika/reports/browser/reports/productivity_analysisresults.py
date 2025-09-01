@@ -40,14 +40,18 @@ from zope.interface import implements
 
 class Report(BrowserView):
     implements(IViewView)
-    template = ViewPageTemplateFile("templates/productivity_analysisresults.pt")
+    template = ViewPageTemplateFile(
+        "templates/productivity_analysisresults.pt"
+    )
 
     def __init__(self, context, request, report=None):
         BrowserView.__init__(self, context, request)
         self.report = report
         self.date = DateTime.DateTime()
         today = self.date.strftime("%Y-%m-%d %H:%M")
-        username = self.context.portal_membership.getAuthenticatedMember().getUserName()
+        username = (
+            self.context.portal_membership.getAuthenticatedMember().getUserName()
+        )
         self.headings = {
             "header": _("Analysis Results"),
             "subheader": _("Created on {} by {}".format(today, username)),
@@ -98,7 +102,9 @@ class Report(BrowserView):
             # find upper and lower limits
             # create hlines for them
             # append to plot_data
-            analysis_spec = api.get_object(self.request.form.get("analysis_spec"))
+            analysis_spec = api.get_object(
+                self.request.form.get("analysis_spec")
+            )
             results_range = analysis_spec.getResultsRange()
             spec_range = self.get_spec_range(results_range, "ServiceUID")
             self.add_filter_by_specification(query=query, out_params=parms)
@@ -120,7 +126,9 @@ class Report(BrowserView):
         total_count = 0
         logger.info("Select analysis-results query: {}".format(query))
         analyses = api.search(query, ANALYSIS_CATALOG)
-        logger.info("Select analysis-results found {} results".format(len(analyses)))
+        logger.info(
+            "Select analysis-results found {} results".format(len(analyses))
+        )
         plot_points = []
         plot_ldl_line = False
         plot_ldl_value = None
@@ -151,18 +159,24 @@ class Report(BrowserView):
                 )
                 if batch.getClientBatchID():
                     client_batch_id_link = self.get_styled_link(
-                        batch.absolute_url(), batch.getClientBatchID(), link_style
+                        batch.absolute_url(),
+                        batch.getClientBatchID(),
+                        link_style,
                     )
 
             # plot limit line if outside limits
             bare_value = analysis.getResult()
             if analysis.getLowerDetectionLimit():
-                if float(bare_value) < float(analysis.getLowerDetectionLimit()):
+                if float(bare_value) < float(
+                    analysis.getLowerDetectionLimit()
+                ):
                     # bare_value = analysis.getLowerDetectionLimit()
                     plot_ldl_line = True
                     plot_ldl_value = analysis.getLowerDetectionLimit()
             if analysis.getUpperDetectionLimit():
-                if float(bare_value) > float(analysis.getUpperDetectionLimit()):
+                if float(bare_value) > float(
+                    analysis.getUpperDetectionLimit()
+                ):
                     # bare_value = analysis.getUpperDetectionLimit()
                     plot_udl_line = True
                     plot_udl_value = analysis.getUpperDetectionLimit()
@@ -235,7 +249,9 @@ class Report(BrowserView):
             logger.info("Select analysis-results query: {}".format(query))
             analyses = api.search(query, ANALYSIS_CATALOG)
             logger.info(
-                "Select analysis-results found {} results".format(len(analyses))
+                "Select analysis-results found {} results".format(
+                    len(analyses)
+                )
             )
             for analysis in analyses:
                 analysis = api.get_object(analysis)
@@ -262,7 +278,9 @@ class Report(BrowserView):
                     )
                     if batch.getClientBatchID():
                         client_batch_id_link = self.get_styled_link(
-                            batch.absolute_url(), batch.getClientBatchID(), link_style
+                            batch.absolute_url(),
+                            batch.getClientBatchID(),
+                            link_style,
                         )
 
                 # plot limit line if outside limits
@@ -273,14 +291,18 @@ class Report(BrowserView):
                     ):
                         # second_bare_value = analysis.getLowerDetectionLimit()
                         second_plot_ldl_line = True
-                        second_plot_ldl_value = analysis.getLowerDetectionLimit()
+                        second_plot_ldl_value = (
+                            analysis.getLowerDetectionLimit()
+                        )
                 if analysis.getUpperDetectionLimit():
                     if float(second_bare_value) > float(
                         analysis.getUpperDetectionLimit()
                     ):
                         # second_bare_value = analysis.getUpperDetectionLimit()
                         second_plot_udl_line = True
-                        second_plot_udl_value = analysis.getLowerDetectionLimit()
+                        second_plot_udl_value = (
+                            analysis.getLowerDetectionLimit()
+                        )
 
                 data_point = [
                     {
@@ -311,7 +333,9 @@ class Report(BrowserView):
                     },
                 ]
                 data_lines.append(data_point)
-                second_plot_points.append({"x": data_point[1], "y": data_point[2]})
+                second_plot_points.append(
+                    {"x": data_point[1], "y": data_point[2]}
+                )
                 total_count += 1
 
         if self.request.get("output_format", "") == "CSV":
@@ -512,7 +536,12 @@ class Report(BrowserView):
         return result
 
     def get_hline_plot_data(
-        self, val, title="dunno", y_axis="left", plot_color="red", line_style="dotted"
+        self,
+        val,
+        title="dunno",
+        y_axis="left",
+        plot_color="red",
+        line_style="dotted",
     ):
         return {
             "plot_color": plot_color,
@@ -537,11 +566,21 @@ class Report(BrowserView):
             query["getClientUID"] = self.request.form["ClientUID"]
             client = api.get_object_by_uid(query["getClientUID"])
             if (
-                len([param for param in out_params if param["title"] != _("Client")])
+                len(
+                    [
+                        param
+                        for param in out_params
+                        if param["title"] != _("Client")
+                    ]
+                )
                 == 0
             ):
                 out_params.append(
-                    {"title": _("Client"), "value": client.Title(), "type": "text"}
+                    {
+                        "title": _("Client"),
+                        "value": client.Title(),
+                        "type": "text",
+                    }
                 )
 
     def add_filter_by_service(self, query, out_params):
@@ -572,7 +611,13 @@ class Report(BrowserView):
         query["getAnalysisSpecUID"] = self.request.form["analysis_spec"]
         analysis_spec = api.get_object_by_uid(query["getAnalysisSpecUID"])
         if (
-            len([param for param in out_params if param["title"] != _("Specification")])
+            len(
+                [
+                    param
+                    for param in out_params
+                    if param["title"] != _("Specification")
+                ]
+            )
             == 0
         ):
             out_params.append(
@@ -589,7 +634,13 @@ class Report(BrowserView):
         query["getSampleTypeUID"] = self.request.form["SampleTypeUID"]
         sampletype = api.get_object_by_uid(query["getSampleTypeUID"])
         if (
-            len([param for param in out_params if param["title"] == _("Sample Type")])
+            len(
+                [
+                    param
+                    for param in out_params
+                    if param["title"] == _("Sample Type")
+                ]
+            )
             == 0
         ):
             out_params.append(
@@ -618,7 +669,13 @@ class Report(BrowserView):
         query["getSamplePointUID"] = self.request.form["SamplePointUID"]
         sample_point = api.get_object_by_uid(query["getSamplePointUID"])
         if (
-            len([param for param in out_params if param["title"] == _("Sample Point")])
+            len(
+                [
+                    param
+                    for param in out_params
+                    if param["title"] == _("Sample Point")
+                ]
+            )
             == 0
         ):
             out_params.append(
@@ -636,7 +693,11 @@ class Report(BrowserView):
         query["getInstrumentUID"] = self.request.form["getInstrumentUID"]
         instrument = api.get_object_by_uid(query["getInstrumentUID"])
         out_params.append(
-            {"title": _("Instrument"), "value": instrument.Title(), "type": "text"}
+            {
+                "title": _("Instrument"),
+                "value": instrument.Title(),
+                "type": "text",
+            }
         )
 
     def add_filter_by_date_range(self, query, out_params):
@@ -644,11 +705,22 @@ class Report(BrowserView):
         if not date_query:
             return
         query["getResultCaptureDate"] = date_query
-        if len([param for param in out_params if param["title"] == _("Analyzed")]) == 0:
+        if (
+            len(
+                [
+                    param
+                    for param in out_params
+                    if param["title"] == _("Analyzed")
+                ]
+            )
+            == 0
+        ):
             out_params.append(
                 {
                     "title": _("Analyzed"),
-                    "value": formatDateParms(self.context, "DateResultCapture"),
+                    "value": formatDateParms(
+                        self.context, "DateResultCapture"
+                    ),
                     "type": "text",
                 }
             )
@@ -659,7 +731,9 @@ class Report(BrowserView):
             "Turnaround time (h)",
         ]
         output = StringIO()
-        dw = csv.DictWriter(output, extrasaction="ignore", fieldnames=fieldnames)
+        dw = csv.DictWriter(
+            output, extrasaction="ignore", fieldnames=fieldnames
+        )
         dw.writerow(dict((fn, fn) for fn in fieldnames))
         for row in data_lines:
             dw.writerow(
