@@ -6,19 +6,29 @@ from senaite.core.interfaces import IAnalysisCatalog
 
 @indexer(IAnalysis, IAnalysisCatalog)
 def getSamplePointUID(instance):
-    sample = instance.aq_parent
-    if sample.portal_type != "AnalysisRequest":
+    if instance.portal_type != "Analysis":
         return
-    if not hasattr(sample, "getSamplePointUID"):
+    if not hasattr(instance, "getSamplePointUID"):
         return
-    logger.debug("----------- Sample: {}".format(sample.getSamplePointUID()))
-    return sample.getSamplePointUID()
+    logger.debug(
+        "----------- reindex SamplePointUID: {}".format(
+            instance.getSamplePointUID()
+        )
+    )
+    return instance.getSamplePointUID()
 
 
 @indexer(IAnalysis, IAnalysisCatalog)
 def getAnalysisSpecUID(instance):
-    sample = instance.aq_parent
-    if sample.portal_type != "AnalysisRequest":
+    if instance.portal_type != "Analysis":
         return
-    logger.debug("----------- Sample: {}".format(sample.getSpecification().UID()))
-    return sample.getSpecification().UID()
+    if not hasattr(instance, "getSpecification"):
+        return
+    if not instance.get("getSpecification"):
+        return
+    logger.debug(
+        "----------- reindex SpecUID: {}".format(
+            instance.getSpecification().UID()
+        )
+    )
+    return instance.getSpecification().UID()

@@ -8,8 +8,9 @@ from Products.Archetypes.atapi import process_types
 from Products.CMFCore.permissions import AddPortalContent
 from Products.CMFCore.utils import ContentInit
 
-_ = MessageFactory('bika.reports')
+_ = MessageFactory("bika.reports")
 PROJECTNAME = "bika.reports"
+PROFILE_ID = "profile-{}:default".format(PROJECTNAME)
 
 
 # import this to log messages
@@ -23,7 +24,8 @@ def initialize(context):
     from senaite.core import permissions
 
     content_types, constructors, ftis = process_types(
-        listTypes(PROJECTNAME), PROJECTNAME)
+        listTypes(PROJECTNAME), PROJECTNAME
+    )
 
     # Register each type with it's own Add permission
     # use "Add portal content" as default
@@ -32,9 +34,10 @@ def initialize(context):
         kind = "%s: Add %s" % (PROJECTNAME, atype.portal_type)
         perm_name = "Add portal content"
         perm = getattr(permissions, perm_name, AddPortalContent)
-        ContentInit(kind,
-                    content_types=(atype,),
-                    permission=perm,
-                    extra_constructors=(constructor, ),
-                    fti=ftis,
-                    ).initialize(context)
+        ContentInit(
+            kind,
+            content_types=(atype,),
+            permission=perm,
+            extra_constructors=(constructor,),
+            fti=ftis,
+        ).initialize(context)

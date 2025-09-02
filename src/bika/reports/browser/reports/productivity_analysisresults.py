@@ -81,6 +81,7 @@ class Report(BrowserView):
         self.udl_color = "brown"
         self.second_ldl_color = "green"
         self.second_udl_color = "green"
+        self.specification_color = "black"
 
     def __call__(self):
         parms = []
@@ -107,7 +108,7 @@ class Report(BrowserView):
             )
             results_range = analysis_spec.getResultsRange()
             spec_range = self.get_spec_range(results_range, "ServiceUID")
-            self.add_filter_by_specification(query=query, out_params=parms)
+            # self.add_filter_by_specification(query=query, out_params=parms)
 
         # Filter by SamplePoint
         self.add_filter_by_samplepoint(query=query, out_params=parms)
@@ -121,6 +122,13 @@ class Report(BrowserView):
         # Filter by SampleType
         self.add_filter_by_sampletype(query=query, out_params=parms)
 
+        # Get lower and upper liimits
+        service = api.get_object_by_uid(self.request.form["ServiceUID"])
+        plot_ldl_line = False
+        plot_ldl_value = service.getLowerDetectionLimit()
+        plot_udl_line = False
+        plot_udl_value = service.getUpperDetectionLimit()
+
         # Fetch the data
         data_lines = []
         total_count = 0
@@ -130,10 +138,6 @@ class Report(BrowserView):
             "Select analysis-results found {} results".format(len(analyses))
         )
         plot_points = []
-        plot_ldl_line = False
-        plot_ldl_value = None
-        plot_udl_line = False
-        plot_udl_value = None
         for analysis in analyses:
             analysis = api.get_object(analysis)
             if not analysis.getResult():
@@ -166,20 +170,12 @@ class Report(BrowserView):
 
             # plot limit line if outside limits
             bare_value = analysis.getResult()
-            if analysis.getLowerDetectionLimit():
-                if float(bare_value) < float(
-                    analysis.getLowerDetectionLimit()
-                ):
-                    # bare_value = analysis.getLowerDetectionLimit()
+            if plot_ldl_value:
+                if float(bare_value) < float(plot_ldl_value):
                     plot_ldl_line = True
-                    plot_ldl_value = analysis.getLowerDetectionLimit()
-            if analysis.getUpperDetectionLimit():
-                if float(bare_value) > float(
-                    analysis.getUpperDetectionLimit()
-                ):
-                    # bare_value = analysis.getUpperDetectionLimit()
+            if plot_udl_value:
+                if float(bare_value) > float(plot_udl_value):
                     plot_udl_line = True
-                    plot_udl_value = analysis.getUpperDetectionLimit()
 
             data_point = [
                 {
@@ -213,11 +209,17 @@ class Report(BrowserView):
             plot_points.append({"x": data_point[1], "y": data_point[2]})
             total_count += 1
 
-        second_plot_points = []
+        # Get lower and upper liimits
         second_plot_ldl_line = False
-        second_plot_ldl_value = None
         second_plot_udl_line = False
-        second_plot_udl_value = None
+        if self.request.form.get("SecondServiceUID"):
+            secondary_service = api.get_object_by_uid(
+                self.request.form["SecondServiceUID"]
+            )
+            second_plot_ldl_value = secondary_service.getLowerDetectionLimit()
+            second_plot_udl_value = secondary_service.getUpperDetectionLimit()
+
+        second_plot_points = []
         if self.request.form.get("SecondServiceUID"):
             query = dict(
                 portal_type="Analysis",
@@ -234,7 +236,7 @@ class Report(BrowserView):
             self.add_filter_by_samplepoint(query=query, out_params=parms)
 
             # filter by specification uid
-            self.add_filter_by_specification(query=query, out_params=parms)
+            # self.add_filter_by_specification(query=query, out_params=parms)
 
             #  # filter by analyst
             #  self.add_filter_by_analyst(query=query, out_params=parms)
@@ -245,6 +247,7 @@ class Report(BrowserView):
             # Filter by SampleType
             self.add_filter_by_sampletype(query=query, out_params=parms)
 
+            # Get limts from Analysis Service
             # Fetch the data
             logger.info("Select analysis-results query: {}".format(query))
             analyses = api.search(query, ANALYSIS_CATALOG)
@@ -285,24 +288,12 @@ class Report(BrowserView):
 
                 # plot limit line if outside limits
                 second_bare_value = analysis.getResult()
-                if analysis.getLowerDetectionLimit():
-                    if float(second_bare_value) < float(
-                        analysis.getLowerDetectionLimit()
-                    ):
-                        # second_bare_value = analysis.getLowerDetectionLimit()
+                if second_plot_ldl_value:
+                    if float(second_bare_value) < float(second_plot_ldl_value):
                         second_plot_ldl_line = True
-                        second_plot_ldl_value = (
-                            analysis.getLowerDetectionLimit()
-                        )
-                if analysis.getUpperDetectionLimit():
-                    if float(second_bare_value) > float(
-                        analysis.getUpperDetectionLimit()
-                    ):
-                        # second_bare_value = analysis.getUpperDetectionLimit()
+                if second_plot_udl_value:
+                    if float(second_bare_value) > float(second_plot_udl_value):
                         second_plot_udl_line = True
-                        second_plot_udl_value = (
-                            analysis.getLowerDetectionLimit()
-                        )
 
                 data_point = [
                     {
@@ -389,7 +380,7 @@ class Report(BrowserView):
                 plot_data.append(
                     self.get_hline_plot_data(
                         plot_ldl_value,
-                        title="LDL",
+                        title="{} LDL".format(title),
                         y_axis="left",
                         plot_color=self.ldl_color,
                         line_style="dashed",
@@ -399,7 +390,7 @@ class Report(BrowserView):
                 plot_data.append(
                     self.get_hline_plot_data(
                         plot_udl_value,
-                        title="UDL",
+                        title="{} UDL".format(title),
                         y_axis="left",
                         plot_color=self.udl_color,
                         line_style="dashed",
@@ -425,7 +416,7 @@ class Report(BrowserView):
                     plot_data.append(
                         self.get_hline_plot_data(
                             second_plot_ldl_value,
-                            title="LDL",
+                            title="{} LDL".format(second_title),
                             y_axis="right",
                             plot_color=self.second_ldl_color,
                             line_style="dashed",
@@ -435,7 +426,7 @@ class Report(BrowserView):
                     plot_data.append(
                         self.get_hline_plot_data(
                             second_plot_udl_value,
-                            title="UDL",
+                            title="{} UDL".format(second_title),
                             y_axis="right",
                             plot_color=self.second_udl_color,
                             line_style="dashed",
@@ -452,7 +443,7 @@ class Report(BrowserView):
                         plot_data.append(
                             self.get_hline_plot_data(
                                 spec_range.get("min"),
-                                title="Min",
+                                title="Spec Min",
                                 y_axis="left",
                                 plot_color=self.analysis_color,
                             )
@@ -461,7 +452,7 @@ class Report(BrowserView):
                         plot_data.append(
                             self.get_hline_plot_data(
                                 spec_range.get("max"),
-                                title="Max",
+                                title="Spec Max",
                                 y_axis="left",
                                 plot_color=self.analysis_color,
                             )
@@ -474,7 +465,7 @@ class Report(BrowserView):
                             plot_data.append(
                                 self.get_hline_plot_data(
                                     second_spec_range.get("min"),
-                                    title="Min",
+                                    title="Spec Min",
                                     y_axis="right",
                                     plot_color=self.second_analysis_color,
                                 )
@@ -483,7 +474,7 @@ class Report(BrowserView):
                             plot_data.append(
                                 self.get_hline_plot_data(
                                     second_spec_range.get("max"),
-                                    title="Max",
+                                    title="Spec Max",
                                     y_axis="right",
                                     plot_color=self.second_analysis_color,
                                 )
@@ -530,9 +521,11 @@ class Report(BrowserView):
             )
         )
         result = {"min": None, "max": None}
-        if an_range > 0:
-            result["min"] = an_range[0].get("min")
-            result["max"] = an_range[0].get("max")
+        if len(an_range) > 0:
+            if an_range[0].get("min"):
+                result["min"] = an_range[0].get("min")
+            if an_range[0].get("max"):
+                result["max"] = an_range[0].get("max")
         return result
 
     def get_hline_plot_data(
