@@ -18,24 +18,23 @@
       };
       this.innerWidth = this.width - this.margin.left - this.margin.right;
       this.innerHeight = this.height - this.margin.top - this.margin.bottom;
-      
       // Initialize SVG
       this.svg = d3.select(this.container).append('svg').attr('width', this.width).attr('height', this.height);
       this.g = this.svg.append('g').attr('transform', `translate(${this.margin.left},${this.margin.top})`);
-      
       // Initialize scales
       this.xScale = d3.scaleTime().range([0, this.innerWidth]);
       this.yScale = d3.scaleLinear().range([
         this.innerHeight,
         0 // Left Y-axis
       ]);
-      console.log('innerHeight: ' + this.innerHeight);
       this.yScaleRight = d3.scaleLinear().range([
         this.innerHeight,
         0 // Right Y-axis
       ]);
       
       // Initialize line generators
+      this.showLegend = this.options.showLegend !== false; // Default to true
+      this.legendPosition = this.options.legendPosition || 'top-right'; // top-right, top-left, bottom-right, bottom-left
       this.line = d3.line().x((d) => {
         return this.xScale(d.x);
       }).y((d) => {
@@ -57,13 +56,13 @@
         hlinesRight: [],
         leftAxisTitle: 'Left Axis',
         rightAxisTitle: 'Right Axis',
-        hasRightPlot: false
+        hasRightPlot: false,
+        legendItems: []
       };
       for (j = 0, len = rawData.length; j < len; j++) {
         series = rawData[j];
         // Determine which Y-axis to use (default to left)
         useRightAxis = series.y_axis === 'right';
-        
         // Set axis titles if provided
         if (series.left_axis_title) {
           parsedData.leftAxisTitle = series.left_axis_title;
@@ -93,6 +92,17 @@
           } else {
             parsedData.linesLeft.push(lineData);
           }
+          if (series.plot_points.length > 0) {
+            // Add to legend
+            parsedData.legendItems.push({
+              label: series.legend_label || `Line ${parsedData.legendItems.length + 1}`,
+              color: series.plot_color,
+              lineStyle: series.line_style || 'solid',
+              type: 'line',
+              axis: useRightAxis ? 'right' : 'left',
+              showPoints: series.show_points
+            });
+          }
         } else if (series.plot_type === 'hline') {
           hlineData = {
             color: series.plot_color,
@@ -104,6 +114,15 @@
           } else {
             parsedData.hlinesLeft.push(hlineData);
           }
+          // Add to legend
+          parsedData.legendItems.push({
+            label: series.legend_label || `Reference Line (${hlineData.y})`,
+            color: series.plot_color,
+            lineStyle: series.line_style || 'dashed',
+            type: 'hline',
+            axis: useRightAxis ? 'right' : 'left',
+            showPoints: false
+          });
         }
       }
       parsedData.hasRightPlot = parsedData.linesRight.length > 0 || parsedData.hlinesRight.length > 0;
@@ -133,7 +152,6 @@
       leftYValues = [];
       rightYValues = [];
       ref = data.linesLeft;
-      
       // Collect left axis data
       for (j = 0, len = ref.length; j < len; j++) {
         line = ref[j];
@@ -150,7 +168,6 @@
         leftYValues.push(hline.y);
       }
       ref3 = data.linesRight;
-      
       // Collect right axis data
       for (m = 0, len3 = ref3.length; m < len3; m++) {
         line = ref3[m];
@@ -166,10 +183,8 @@
         hline = ref5[o];
         rightYValues.push(hline.y);
       }
-      
       // Set X scale domain
       this.xScale.domain(d3.extent(allXValues));
-      
       // Set Y scale domains with padding
       if (leftYValues.length > 0) {
         leftExtent = d3.extent(leftYValues);
@@ -190,7 +205,6 @@
       // X Axis with better date/time formatting
       timeRange = this.xScale.domain();
       timeDiff = timeRange[1] - timeRange[0];
-      
       // Choose appropriate format based on time span
       if (timeDiff < 24 * 60 * 60 * 1000) { // Less than 24 hours
         tickFormat = d3.timeFormat('%m/%d %H:%M');
@@ -203,23 +217,17 @@
         tickCount = Math.min(8, Math.max(3, Math.floor(this.innerWidth / 120)));
       }
       this.g.append('g').attr('class', 'x-axis').attr('transform', `translate(0,${this.innerHeight})`).call(d3.axisBottom(this.xScale).tickFormat(tickFormat).ticks(tickCount));
-      
       // Rotate x-axis labels for better readability
       this.g.selectAll('.x-axis text').style('text-anchor', 'end').attr('dx', '-.8em').attr('dy', '.15em').attr('transform', 'rotate(-45)');
-      
       // Left Y Axis (integers)
       this.g.append('g').attr('class', 'y-axis-left').call(d3.axisLeft(this.yScale).tickFormat(d3.format('.1f')));
-      
       // Right Y Axis (floats) - only if we have right-axis data
       if (data.hasRightPlot && this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
         this.g.append('g').attr('class', 'y-axis-right').attr('transform', `translate(${this.innerWidth},0)`).call(d3.axisRight(this.yScaleRight).tickFormat(d3.format('.1f')));
       }
-      
       // Add left axis labels
       this.g.append('text').attr('class', 'axis-label-left').attr('transform', 'rotate(-90)').attr('y', 0 - this.margin.left).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('text-anchor', 'middle').style('fill', data.leftAxisColor).text(data.leftAxisTitle);
-      
       // Right axis label (only if we have right-axis data)
-      console.log('Right Axis: ' + this.yScaleRight.domain()[0] + ' ' + this.yScaleRight.domain()[1]);
       if (data.hasRightPlot && this.yScaleRight.domain()[0] !== this.yScaleRight.domain()[1]) {
         this.g.append('text').attr('class', 'axis-label-right').attr('transform', 'rotate(-90)').attr('y', this.innerWidth + this.margin.right - 30).attr('x', 0 - (this.innerHeight / 2)).attr('dy', '1em').style('fill', data.rightAxisColor).style('text-anchor', 'middle').text(data.rightAxisTitle);
       }
@@ -237,7 +245,6 @@
       }).attr('stroke-width', 2).attr('stroke-dasharray', (d) => {
         return this.getLineStylePattern(d.lineStyle);
       }).attr('opacity', 0.7);
-      
       // Right axis horizontal lines
       return this.g.selectAll('.hline-right').data(hlinesRight).enter().append('line').attr('class', 'hline-right').attr('x1', 0).attr('x2', this.innerWidth).attr('y1', (d) => {
         return this.yScaleRight(d.y);
@@ -270,8 +277,7 @@
           return this.getLineStylePattern(d.lineStyle);
         });
       }
-
-      // Draw points for left axis lines
+// Draw points for left axis lines
       for (i = j = 0, len = linesLeft.length; j < len; i = ++j) {
         lineData = linesLeft[i];
         if (lineData.showPoints) {
@@ -282,23 +288,96 @@
           }).attr('r', 4).attr('fill', lineData.color).attr('stroke', 'white').attr('stroke-width', 2);
         }
       }
-      if (hasRightPlot) {
 // Draw points for right axis lines
-        results = [];
-        for (i = k = 0, len1 = linesRight.length; k < len1; i = ++k) {
-          lineData = linesRight[i];
-          if (lineData.showPoints) {
-            results.push(this.g.selectAll(`.point-right-${i}`).data(lineData.points).enter().append('circle').attr('class', `point-right-${i}`).attr('cx', (d) => {
-              return this.xScale(d.x);
-            }).attr('cy', (d) => {
-              return this.yScaleRight(d.y);
-            }).attr('r', 4).attr('fill', lineData.color).attr('stroke', 'white').attr('stroke-width', 2));
-          } else {
-            results.push(void 0);
-          }
+      results = [];
+      for (i = k = 0, len1 = linesRight.length; k < len1; i = ++k) {
+        lineData = linesRight[i];
+        if (lineData.showPoints) {
+          results.push(this.g.selectAll(`.point-right-${i}`).data(lineData.points).enter().append('circle').attr('class', `point-right-${i}`).attr('cx', (d) => {
+            return this.xScale(d.x);
+          }).attr('cy', (d) => {
+            return this.yScaleRight(d.y);
+          }).attr('r', 4).attr('fill', lineData.color).attr('stroke', 'white').attr('stroke-width', 2));
+        } else {
+          results.push(void 0);
         }
-        return results;
       }
+      return results;
+    }
+
+    drawLegend(legendItems) {
+      var itemHeight, itemWidth, legend, legendHeight, legendItem, legendWidth, padding, x, y;
+      if (!(this.showLegend && legendItems.length > 0)) {
+        return;
+      }
+      // Calculate legend dimensions
+      itemHeight = 20;
+      itemWidth = 150;
+      padding = 10;
+      legendHeight = (legendItems.length * itemHeight) + (padding * 2);
+      legendWidth = itemWidth + (padding * 2);
+      // Position legend based on legendPosition option
+      switch (this.legendPosition) {
+        case 'top-right':
+          x = this.innerWidth - legendWidth - 10;
+          y = 10;
+          break;
+        case 'top-left':
+          x = 10;
+          y = 10;
+          break;
+        case 'bottom-right':
+          x = this.innerWidth - legendWidth - 10;
+          y = this.innerHeight - legendHeight - 10;
+          break;
+        case 'bottom-left':
+          x = 10;
+          y = this.innerHeight - legendHeight - 10;
+          break;
+        default:
+          x = this.innerWidth - legendWidth - 10;
+          y = 10;
+      }
+      // Create legend container
+      legend = this.g.append('g').attr('class', 'legend').attr('transform', `translate(${x}, ${y})`);
+      // Add legend background
+      legend.append('rect').attr('class', 'legend-background').attr('width', legendWidth).attr('height', legendHeight).attr('fill', 'white').attr('stroke', '#ccc').attr('stroke-width', 1).attr('rx', 5).attr('opacity', 0.9);
+      // Add legend items
+      legendItem = legend.selectAll('.legend-item').data(legendItems).enter().append('g').attr('class', 'legend-item').attr('transform', function(d, i) {
+        return `translate(${padding}, ${padding + (i * itemHeight) + 5})`;
+      });
+      // Add line samples
+      legendItem.append('line').attr('x1', 0).attr('x2', 30).attr('y1', itemHeight / 2 - 2).attr('y2', itemHeight / 2 - 2).attr('stroke', function(d) {
+        return d.color;
+      }).attr('stroke-width', 2).attr('stroke-dasharray', (d) => {
+        return this.getLineStylePattern(d.lineStyle);
+      });
+      // Add point samples (if line shows points)
+      legendItem.filter(function(d) {
+        return d.showPoints;
+      }).append('circle').attr('cx', 15).attr('cy', itemHeight / 2 - 2).attr('r', 3).attr('fill', function(d) {
+        return d.color;
+      }).attr('stroke', 'white').attr('stroke-width', 1);
+      // Add axis indicators (L/R)
+      legendItem.append('text').attr('x', 35).attr('y', itemHeight / 2 + 3).attr('font-size', '10px').attr('font-family', 'Arial, sans-serif').attr('fill', '#666').text(function(d) {
+        if (d.axis === 'right') {
+          return '(R)';
+        } else {
+          return '(L)';
+        }
+      });
+      // Add labels
+      return legendItem.append('text').attr('x', 50).attr('y', itemHeight / 2 + 3).attr('font-size', '12px').attr('font-family', 'Arial, sans-serif').attr('fill', '#333').text(function(d) {
+        return d.label;
+      }).each(function() {
+        var text, textElement;
+        // Truncate long labels
+        textElement = d3.select(this);
+        text = textElement.text();
+        if (text.length > 15) {
+          return textElement.text(text.substring(0, 12) + '...');
+        }
+      });
     }
 
     addTooltip() {
@@ -317,18 +396,16 @@
       var styledSVG, svgNode, svgString;
       // Clone the SVG node to avoid modifying the original
       svgNode = this.svg.node().cloneNode(true);
-      
       // Add necessary styles inline for PDF rendering
       svgString = new XMLSerializer().serializeToString(svgNode);
-      
       // Add CSS styles that WeasyPrint can understand
       styledSVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${this.width}" height="${this.height}">
   <defs>
     <style type="text/css"><![CDATA[
       .axis-label { font-size: 12px; font-family: Arial, sans-serif; }
       .x-axis text, .y-axis text { font-size: 11px; font-family: Arial, sans-serif; }
-      .x-axis path, .y-axis path, .x-axis line, .y-axis line { 
-        fill: none; stroke: #000; shape-rendering: crispEdges; 
+      .x-axis path, .y-axis path, .x-axis line, .y-axis line {
+        fill: none; stroke: #000; shape-rendering: crispEdges;
       }
       .hline { opacity: 0.7; }
       .line-path { fill: none; stroke-width: 2px; }
@@ -340,8 +417,7 @@
       return styledSVG;
     }
 
-    
-      // Method to render chart and return SVG for PDF
+    // Method to render chart and return SVG for PDF
     renderForPDF(rawData) {
       this.plot(rawData);
       return this.getSVGString();
@@ -351,23 +427,19 @@
       var data;
       // Clear previous plot
       this.g.selectAll('*').remove();
-      
       // Parse and prepare data
       data = this.parseData(rawData);
-      
       // Update scales
       this.updateScales(data);
-      
       // Draw components
       this.drawAxes(data);
       this.drawHorizontalLines(data.hlinesLeft, data.hlinesRight);
       this.drawLines(data.linesLeft, data.linesRight, data.hasRightPlot);
-      
+      this.drawLegend(data.legendItems);
       // Only add tooltips if not generating for PDF
       if (!this.options.forPDF) {
         this.addTooltip();
       }
-      
       // Add basic styling
       this.svg.selectAll('.axis-label, .axis-label-left, .axis-label-right').style('font-size', '12px').style('font-family', 'Arial, sans-serif');
       return this.svg.selectAll('.x-axis, .y-axis-left, .y-axis-right').style('font-size', '11px').style('font-family', 'Arial, sans-serif');
@@ -377,7 +449,12 @@
 
   // Usage example:
   // container = '#chart-container'  # CSS selector for container element
-  // plotter = new D3LinePlotter(container, { width: 900, height: 500 })
+  // plotter = new D3LinePlotter(container, {
+  //   width: 900,
+  //   height: 500,
+  //   showLegend: true,           # Show/hide legend (default: true)
+  //   legendPosition: 'top-right' # 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+  // })
   // plotter.plot(yourDataArray)
 
   // Export for use in other modules

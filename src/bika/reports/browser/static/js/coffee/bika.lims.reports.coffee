@@ -39,10 +39,14 @@ class window.ReportFolderView
     @tomselects = {}
     $(".tomsel").each (i, el) =>
       select_el = el.childNodes[0].childNodes[3]
+      allowEmptySetting = true
+      if select_el.hasAttribute('allow_blank') and select_el.getAttribute('allow_blank') == "false"
+        # console.log 'select_id: ' + select_el.getAttribute('id') + ' allow_blank ' + select_el.getAttribute('allow_blank')
+        allowEmptySetting = false
       try
         ts = new TomSelect(select_el,
           create: false
-          allowEmptyOption: true
+          allowEmptyOption: allowEmptySetting
           placeholder: "Choose an option"
           maxOptions: null
           sortField: {

@@ -1,6 +1,7 @@
 ### Please use this command to compile this file into the parent `js` directory:
     coffee --no-header -w -o ../ -c bika.lims.plotter.coffee
 ###
+
 class D3LinePlotter
   constructor: (@container, @options = {}) ->
     @width = @options.width || 700
@@ -8,28 +9,29 @@ class D3LinePlotter
     @margin = @options.margin || { top: 20, right: 70, bottom: 100, left: 50 }
     @innerWidth = @width - @margin.left - @margin.right
     @innerHeight = @height - @margin.top - @margin.bottom
-    
+
     # Initialize SVG
     @svg = d3.select(@container)
       .append('svg')
       .attr('width', @width)
       .attr('height', @height)
-    
+
     @g = @svg.append('g')
       .attr('transform', "translate(#{@margin.left},#{@margin.top})")
-    
+
     # Initialize scales
     @xScale = d3.scaleTime().range([0, @innerWidth])
     @yScale = d3.scaleLinear().range([@innerHeight, 0])  # Left Y-axis
-    console.log('innerHeight: ' + @innerHeight)
     @yScaleRight = d3.scaleLinear().range([@innerHeight, 0])  # Right Y-axis
-    
+
     # Initialize line generators
+    @showLegend = @options.showLegend != false  # Default to true
+    @legendPosition = @options.legendPosition || 'top-right'  # top-right, top-left, bottom-right, bottom-left
     @line = d3.line()
       .x((d) => @xScale(d.x))
       .y((d) => @yScale(d.y))
       .curve(d3.curveMonotoneX)
-    
+
     @lineRight = d3.line()
       .x((d) => @xScale(d.x))
       .y((d) => @yScaleRight(d.y))
@@ -44,12 +46,13 @@ class D3LinePlotter
       leftAxisTitle: 'Left Axis'
       rightAxisTitle: 'Right Axis'
       hasRightPlot: false
+      legendItems: []
     }
-    
+
     for series in rawData
       # Determine which Y-axis to use (default to left)
       useRightAxis = series.y_axis is 'right'
-      
+
       # Set axis titles if provided
       if series.left_axis_title
         parsedData.leftAxisTitle = series.left_axis_title
@@ -57,7 +60,7 @@ class D3LinePlotter
       if series.right_axis_title
         parsedData.rightAxisTitle = series.right_axis_title
         parsedData.rightAxisColor = series.plot_color
-      
+
       if series.plot_type is 'line'
         lineData = {
           color: series.plot_color
@@ -65,32 +68,54 @@ class D3LinePlotter
           lineStyle: series.line_style || 'solid'  # solid, dashed, dotted
           points: []
         }
-        
+
         for point in series.plot_points
           lineData.points.push({
             x: new Date(point.x.value)
             y: parseFloat(point.y.bare_value)
           })
-        
+
         if useRightAxis
           parsedData.linesRight.push(lineData)
         else
           parsedData.linesLeft.push(lineData)
-      
+
+        if series.plot_points.length > 0
+          # Add to legend
+          parsedData.legendItems.push({
+            label: series.legend_label || "Line #{parsedData.legendItems.length + 1}"
+            color: series.plot_color
+            lineStyle: series.line_style || 'solid'
+            type: 'line'
+            axis: if useRightAxis then 'right' else 'left'
+            showPoints: series.show_points
+          })
+
       else if series.plot_type is 'hline'
         hlineData = {
           color: series.plot_color
           y: parseFloat(series.plot_points[0].y.value)
           lineStyle: series.line_style || 'dashed'
         }
-        
+
         if useRightAxis
           parsedData.hlinesRight.push(hlineData)
         else
           parsedData.hlinesLeft.push(hlineData)
-    
+
+        # Add to legend
+        parsedData.legendItems.push({
+          label: series.legend_label || "Reference Line (#{hlineData.y})"
+          color: series.plot_color
+          lineStyle: series.line_style || 'dashed'
+          type: 'hline'
+          axis: if useRightAxis then 'right' else 'left'
+          showPoints: false
+        })
+
     parsedData.hasRightPlot = parsedData.linesRight.length > 0 or parsedData.hlinesRight.length > 0
     console.log('hasRightPlot: ' + parsedData.hasRightPlot)
+
     return parsedData
 
   getLineStylePattern: (style) ->
@@ -105,35 +130,35 @@ class D3LinePlotter
     allXValues = []
     leftYValues = []
     rightYValues = []
-    
+
     # Collect left axis data
     for line in data.linesLeft
       for point in line.points
         allXValues.push(point.x)
         leftYValues.push(point.y)
-    
+
     for hline in data.hlinesLeft
       leftYValues.push(hline.y)
-    
+
     # Collect right axis data
     for line in data.linesRight
       for point in line.points
         allXValues.push(point.x)
         rightYValues.push(point.y)
-    
+
     for hline in data.hlinesRight
       rightYValues.push(hline.y)
-    
+
     # Set X scale domain
     @xScale.domain(d3.extent(allXValues))
-    
+
     # Set Y scale domains with padding
     if leftYValues.length > 0
       leftExtent = d3.extent(leftYValues)
       leftRange = leftExtent[1] - leftExtent[0]
       leftPadding = leftRange * 0.1
       @yScale.domain([leftExtent[0] - leftPadding, leftExtent[1] + leftPadding])
-    
+
     if rightYValues.length > 0
       rightExtent = d3.extent(rightYValues)
       rightRange = rightExtent[1] - rightExtent[0]
@@ -144,7 +169,7 @@ class D3LinePlotter
     # X Axis with better date/time formatting
     timeRange = @xScale.domain()
     timeDiff = timeRange[1] - timeRange[0]
-    
+
     # Choose appropriate format based on time span
     if timeDiff < 24 * 60 * 60 * 1000  # Less than 24 hours
       tickFormat = d3.timeFormat('%m/%d %H:%M')
@@ -155,33 +180,33 @@ class D3LinePlotter
     else
       tickFormat = d3.timeFormat('%Y-%m-%d')
       tickCount = Math.min(8, Math.max(3, Math.floor(@innerWidth / 120)))
-    
+
     @g.append('g')
       .attr('class', 'x-axis')
       .attr('transform', "translate(0,#{@innerHeight})")
       .call(d3.axisBottom(@xScale)
         .tickFormat(tickFormat)
         .ticks(tickCount))
-    
+
     # Rotate x-axis labels for better readability
     @g.selectAll('.x-axis text')
       .style('text-anchor', 'end')
       .attr('dx', '-.8em')
       .attr('dy', '.15em')
       .attr('transform', 'rotate(-45)')
-    
+
     # Left Y Axis (integers)
     @g.append('g')
       .attr('class', 'y-axis-left')
       .call(d3.axisLeft(@yScale).tickFormat(d3.format('.1f')))
-    
+
     # Right Y Axis (floats) - only if we have right-axis data
     if data.hasRightPlot and @yScaleRight.domain()[0] isnt @yScaleRight.domain()[1]
       @g.append('g')
         .attr('class', 'y-axis-right')
         .attr('transform', "translate(#{@innerWidth},0)")
         .call(d3.axisRight(@yScaleRight).tickFormat(d3.format('.1f')))
-    
+
     # Add left axis labels
     @g.append('text')
       .attr('class', 'axis-label-left')
@@ -192,9 +217,8 @@ class D3LinePlotter
       .style('text-anchor', 'middle')
       .style('fill', data.leftAxisColor)
       .text(data.leftAxisTitle)
-    
+
     # Right axis label (only if we have right-axis data)
-    console.log('Right Axis: ' + @yScaleRight.domain()[0] + ' ' + @yScaleRight.domain()[1])
     if data.hasRightPlot and @yScaleRight.domain()[0] isnt @yScaleRight.domain()[1]
       @g.append('text')
         .attr('class', 'axis-label-right')
@@ -205,7 +229,7 @@ class D3LinePlotter
         .style('fill', data.rightAxisColor)
         .style('text-anchor', 'middle')
         .text(data.rightAxisTitle)
-    
+
     @g.append('text')
       .attr('class', 'axis-label')
       .attr('transform', "translate(#{@innerWidth / 2}, #{@innerHeight + @margin.bottom})")
@@ -228,7 +252,7 @@ class D3LinePlotter
       .attr('stroke-width', 2)
       .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
       .attr('opacity', 0.7)
-    
+
     # Right axis horizontal lines
     @g.selectAll('.hline-right')
       .data(hlinesRight)
@@ -256,7 +280,7 @@ class D3LinePlotter
       .attr('stroke', (d) -> d.color)
       .attr('stroke-width', 2)
       .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
-    
+
     if hasRightPlot
       # Draw right axis line paths
       @g.selectAll('.line-path-right')
@@ -269,7 +293,7 @@ class D3LinePlotter
         .attr('stroke', (d) -> d.color)
         .attr('stroke-width', 2)
         .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
-    
+
     # Draw points for left axis lines
     for lineData, i in linesLeft
       if lineData.showPoints
@@ -284,23 +308,118 @@ class D3LinePlotter
           .attr('fill', lineData.color)
           .attr('stroke', 'white')
           .attr('stroke-width', 2)
-    
-    if hasRightPlot
-      # Draw points for right axis lines
-      for lineData, i in linesRight
-        if lineData.showPoints
-          @g.selectAll(".point-right-#{i}")
-            .data(lineData.points)
-            .enter()
-            .append('circle')
-            .attr('class', "point-right-#{i}")
-            .attr('cx', (d) => @xScale(d.x))
-            .attr('cy', (d) => @yScaleRight(d.y))
-            .attr('r', 4)
-            .attr('fill', lineData.color)
-            .attr('stroke', 'white')
-            .attr('stroke-width', 2)
 
+    # Draw points for right axis lines
+    for lineData, i in linesRight
+      if lineData.showPoints
+        @g.selectAll(".point-right-#{i}")
+          .data(lineData.points)
+          .enter()
+          .append('circle')
+          .attr('class', "point-right-#{i}")
+          .attr('cx', (d) => @xScale(d.x))
+          .attr('cy', (d) => @yScaleRight(d.y))
+          .attr('r', 4)
+          .attr('fill', lineData.color)
+          .attr('stroke', 'white')
+          .attr('stroke-width', 2)
+
+  drawLegend: (legendItems) ->
+    return unless @showLegend and legendItems.length > 0
+
+    # Calculate legend dimensions
+    itemHeight = 20
+    itemWidth = 150
+    padding = 10
+    legendHeight = (legendItems.length * itemHeight) + (padding * 2)
+    legendWidth = itemWidth + (padding * 2)
+
+    # Position legend based on legendPosition option
+    switch @legendPosition
+      when 'top-right'
+        x = @innerWidth - legendWidth - 10
+        y = 10
+      when 'top-left'
+        x = 10
+        y = 10
+      when 'bottom-right'
+        x = @innerWidth - legendWidth - 10
+        y = @innerHeight - legendHeight - 10
+      when 'bottom-left'
+        x = 10
+        y = @innerHeight - legendHeight - 10
+      else
+        x = @innerWidth - legendWidth - 10
+        y = 10
+
+    # Create legend container
+    legend = @g.append('g')
+      .attr('class', 'legend')
+      .attr('transform', "translate(#{x}, #{y})")
+
+    # Add legend background
+    legend.append('rect')
+      .attr('class', 'legend-background')
+      .attr('width', legendWidth)
+      .attr('height', legendHeight)
+      .attr('fill', 'white')
+      .attr('stroke', '#ccc')
+      .attr('stroke-width', 1)
+      .attr('rx', 5)
+      .attr('opacity', 0.9)
+
+    # Add legend items
+    legendItem = legend.selectAll('.legend-item')
+      .data(legendItems)
+      .enter()
+      .append('g')
+      .attr('class', 'legend-item')
+      .attr('transform', (d, i) -> "translate(#{padding}, #{padding + (i * itemHeight) + 5})")
+
+    # Add line samples
+    legendItem.append('line')
+      .attr('x1', 0)
+      .attr('x2', 30)
+      .attr('y1', itemHeight / 2 - 2)
+      .attr('y2', itemHeight / 2 - 2)
+      .attr('stroke', (d) -> d.color)
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', (d) => @getLineStylePattern(d.lineStyle))
+
+    # Add point samples (if line shows points)
+    legendItem.filter((d) -> d.showPoints)
+      .append('circle')
+      .attr('cx', 15)
+      .attr('cy', itemHeight / 2 - 2)
+      .attr('r', 3)
+      .attr('fill', (d) -> d.color)
+      .attr('stroke', 'white')
+      .attr('stroke-width', 1)
+
+    # Add axis indicators (L/R)
+    legendItem.append('text')
+      .attr('x', 35)
+      .attr('y', itemHeight / 2 + 3)
+      .attr('font-size', '10px')
+      .attr('font-family', 'Arial, sans-serif')
+      .attr('fill', '#666')
+      .text((d) -> if d.axis is 'right' then '(R)' else '(L)')
+
+    # Add labels
+    legendItem.append('text')
+      .attr('x', 50)
+      .attr('y', itemHeight / 2 + 3)
+      .attr('font-size', '12px')
+      .attr('font-family', 'Arial, sans-serif')
+      .attr('fill', '#333')
+      .text((d) -> d.label)
+      .each(->
+        # Truncate long labels
+        textElement = d3.select(this)
+        text = textElement.text()
+        if text.length > 15
+          textElement.text(text.substring(0, 12) + '...')
+      )
   addTooltip: ->
     tooltip = d3.select('body').append('div')
       .attr('class', 'tooltip')
@@ -311,7 +430,7 @@ class D3LinePlotter
       .style('border-radius', '5px')
       .style('pointer-events', 'none')
       .style('opacity', 0)
-    
+
     @g.selectAll('circle')
       .on('mouseover', (event, d) ->
         tooltip.transition()
@@ -331,10 +450,10 @@ class D3LinePlotter
   getSVGString: ->
     # Clone the SVG node to avoid modifying the original
     svgNode = @svg.node().cloneNode(true)
-    
+
     # Add necessary styles inline for PDF rendering
     svgString = new XMLSerializer().serializeToString(svgNode)
-    
+
     # Add CSS styles that WeasyPrint can understand
     styledSVG = """
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="#{@width}" height="#{@height}">
@@ -342,8 +461,8 @@ class D3LinePlotter
         <style type="text/css"><![CDATA[
           .axis-label { font-size: 12px; font-family: Arial, sans-serif; }
           .x-axis text, .y-axis text { font-size: 11px; font-family: Arial, sans-serif; }
-          .x-axis path, .y-axis path, .x-axis line, .y-axis line { 
-            fill: none; stroke: #000; shape-rendering: crispEdges; 
+          .x-axis path, .y-axis path, .x-axis line, .y-axis line {
+            fill: none; stroke: #000; shape-rendering: crispEdges;
           }
           .hline { opacity: 0.7; }
           .line-path { fill: none; stroke-width: 2px; }
@@ -353,9 +472,9 @@ class D3LinePlotter
       #{svgNode.innerHTML}
     </svg>
     """
-    
+
     return styledSVG
-  
+
   # Method to render chart and return SVG for PDF
   renderForPDF: (rawData) ->
     @plot(rawData)
@@ -364,34 +483,40 @@ class D3LinePlotter
   plot: (rawData) ->
     # Clear previous plot
     @g.selectAll('*').remove()
-    
+
     # Parse and prepare data
     data = @parseData(rawData)
-    
+
     # Update scales
     @updateScales(data)
-    
+
     # Draw components
     @drawAxes(data)
     @drawHorizontalLines(data.hlinesLeft, data.hlinesRight)
     @drawLines(data.linesLeft, data.linesRight, data.hasRightPlot)
-    
+    @drawLegend(data.legendItems)
+
     # Only add tooltips if not generating for PDF
     unless @options.forPDF
       @addTooltip()
-    
+
     # Add basic styling
     @svg.selectAll('.axis-label, .axis-label-left, .axis-label-right')
       .style('font-size', '12px')
       .style('font-family', 'Arial, sans-serif')
-    
+
     @svg.selectAll('.x-axis, .y-axis-left, .y-axis-right')
       .style('font-size', '11px')
       .style('font-family', 'Arial, sans-serif')
 
 # Usage example:
 # container = '#chart-container'  # CSS selector for container element
-# plotter = new D3LinePlotter(container, { width: 900, height: 500 })
+# plotter = new D3LinePlotter(container, {
+#   width: 900,
+#   height: 500,
+#   showLegend: true,           # Show/hide legend (default: true)
+#   legendPosition: 'top-right' # 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+# })
 # plotter.plot(yourDataArray)
 
 # Export for use in other modules
