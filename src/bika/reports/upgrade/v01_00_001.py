@@ -5,7 +5,7 @@ from bika.reports.config import PROJECTNAME
 from bika.reports.config import PROFILE_ID
 from bika.reports.config import logger
 from senaite.core.upgrade import upgradestep
-from senaite.core.upgrade.utils import UpgradeUtils
+# from senaite.core.upgrade.utils import UpgradeUtils
 from senaite.core.catalog import REPORT_CATALOG
 
 version = "1.0.1"
@@ -16,14 +16,12 @@ def upgrade(tool):
     portal = tool.aq_inner.aq_parent
     setup = portal.portal_setup
     portal = tool.aq_inner.aq_parent
-    ut = UpgradeUtils(portal)
-    ver_from = ut.getInstalledVersion(PROJECTNAME)
-
+    # ut = UpgradeUtils(portal)
+    # ver_from = ut.getInstalledVersion(PROJECTNAME)
 
     # -------- ADD YOUR STUFF BELOW --------
 
     setup.runImportStepFromProfile(PROFILE_ID, "workflow")
-    import pdb; pdb.set_trace()
     update_workflow_mappings_reports(portal)
     logger.info("{0} upgraded to version {1}".format(PROJECTNAME, version))
     return True
@@ -36,7 +34,6 @@ def update_workflow_mappings_reports(portal):
     wf_id = "senaite_deactivable_type_workflow"
     query = {"portal_type": "Report"}
     brains = api.search(query, REPORT_CATALOG)
-    import pdb; pdb.set_trace()
     update_workflow_mappings_for(portal, wf_id, brains)
     logger.info("Updating role mappings for Samples [DONE]")
 
