@@ -1,4 +1,4 @@
-## senaite.crms
+## bika.reports
 
 ### Overview
 
