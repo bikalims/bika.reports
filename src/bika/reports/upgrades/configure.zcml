@@ -1,0 +1,14 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="bika.reports">
+
+ <genericsetup:upgradeStep
+     title="Upgrade to BIKA.REPORTS 1.0.1"
+     description="Add getAnalysisSpecUID to ANALYSIS CATALOG"
+     source="1000"
+     destination="1.0.1"
+     handler="bika.reports.upgrades.v01_00_001.upgrade"
+     profile="bika.reports:default"/>
+
+</configure>

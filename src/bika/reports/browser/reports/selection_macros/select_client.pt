@@ -5,7 +5,9 @@
 
   <select name="ClientUID:ignore_empty"
           class="form-control form-control-sm"
-          id="ClientUID">
+          id="ClientUID"
+          autocomplete="off"
+          placeholder="Select a client ...">
     <option value=""/>
     <tal:clients tal:repeat="client view/clients">
       <option

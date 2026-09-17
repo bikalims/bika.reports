@@ -1,4 +1,9 @@
 <?xml version="1.0"?>
-<object name="portal_catalog">
-  <!--<column value="my_meta_column"/>-->
+<object name="senaite_catalog_analysis">
+  <index name="getSamplePointUID" meta_type="FieldIndex">
+    <indexed_attr value="getSamplePointUID"/>
+  </index>
+  <index name="getAnalysisSpecUID" meta_type="FieldIndex">
+    <indexed_attr value="getAnalysisSpecUID"/>
+  </index>
 </object>

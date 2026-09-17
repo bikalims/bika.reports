@@ -1,0 +1,14 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="bika.reports">
+
+ <genericsetup:upgradeStep
+     title="Upgrade to BIKA.REPORTS 1.0.1"
+     description="Change Reports workflow to include deactivate"
+     source="1000"
+     destination="1001"
+     handler="bika.reports.upgrade.v01_00_001.upgrade"
+     profile="bika.reports:default"/>
+
+</configure>

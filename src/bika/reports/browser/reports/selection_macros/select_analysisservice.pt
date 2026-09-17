@@ -7,7 +7,8 @@
           id="ServiceUID"
           class="form-control form-control-sm"
           tal:attributes="size python:view.multiselect and '7' or '1';
-                multiple view/multiselect">
+                multiple view/multiselect;
+                allow_blank python: view.allow_blank and 'true' or 'false'">
     <option tal:condition="python:view.allow_blank and not view.multiselect"
             value=""/>
     <tal:services  tal:repeat="service view/analysisservices">

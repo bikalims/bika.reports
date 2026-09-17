@@ -16,9 +16,8 @@
   -->
   <!--<includeDependencies package="." />-->
   <include package="senaite.core.permissions" />
-
   <include package=".browser" />
-
+  <include package=".upgrade"/>
   <include file="permissions.zcml" />
 
   <genericsetup:registerProfile
@@ -44,6 +43,9 @@
       name="bika.reports-hiddenprofiles"
       />
 
-  <!-- -*- extra stuff goes here -*- -->
+  <include package=".upgrades" />
+
+  <adapter name="getSamplePointUID" factory=".indexers.getSamplePointUID" />
+  <adapter name="getAnalysisSpecUID" factory=".indexers.getAnalysisSpecUID" />
 
 </configure>

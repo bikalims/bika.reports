@@ -6,7 +6,7 @@
 
   <head>
     <metal:block fill-slot="head_slot">
-      <style media="screen" type="text/css">
+      <style tal:condition="python: False" media="screen" type="text/css">
        h2 {
          font-size: 1.1em;
          margin: 15px 0px;
@@ -81,8 +81,16 @@
       <script type="text/javascript"
               tal:attributes="src python:portal.absolute_url() + '/senaite_widgets/datetimewidget.js'"></script>
       <script type="text/javascript"
+            tal:attributes="src string:${portal_url}/++plone++bika.reports/js/api.js"></script>
+      <script type="text/javascript"
               src="bika.lims.reports.js"
               tal:attributes="src string:${portal/absolute_url}/++plone++bika.reports/js/bika.lims.reports.js"></script>
+      <link rel="stylesheet"
+              href="bika.reports.css"
+              tal:attributes="href string:${portal/absolute_url}/++plone++bika.reports/css/bika.reports.css"/>
+<!-- TomSelect -->
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/js/tom-select.complete.min.js"></script>
 
     </metal:block>
   </head>
@@ -99,6 +107,7 @@
 
       <div>
         <fieldset>
+          <!--
           <h2 i18n:translate="">Sample related reports</h2>
           <ul id="toc-reports">
 
@@ -165,6 +174,7 @@
               </div>
             </li>
           </ul>
+          -->
 
           <h2 i18n:translate="">Analyses related reports</h2>
           <ul id="toc-reports">
@@ -178,26 +188,27 @@
                 The number of analyses requested per analysis service
               </span>
 
-              <div id="analysestotals" style="display:none;" class="criteria">
+              <div id="analysestotals" style="display:none;" class="criteria col-4">
                 <form action="createreport" method="post"
                       tal:attributes="action string:${here/absolute_url}/createreport"
                       name="productivity_analysesperservice">
                   <input type="hidden" name="report_id"
                          value="productivity_analysesperservice"/>
                   <fieldset>
-                    <tal:x content="structure context/@@selection_macros/select_client"/>
+                    <div tal:content="structure context/@@selection_macros/select_client" class="tomsel"/>
                     <tal:x content="structure python:view.selection_macros.select_daterange_requested(
                                     field_id='Requested',
                                     field_title='Date Requested')"/>
                     <tal:x content="structure python:view.selection_macros.select_daterange_published(
                                     field_id='Published',
                                     field_title='Date Published')"/>
-                    <tal:x content="structure python:view.selection_macros.select_state_analysis(
+                    <div class="tomsel" tal:content="structure python:view.selection_macros.select_state_analysis(
                                     workflow_id='senaite_analysis_workflow',
                                     field_id='senaite_analysis_workflow',
                                     field_title='Analysis state')"/>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
                   </fieldset>
+                  <br />
                   <input tabindex=""
                          class="searchButton allowMultiSubmit"
                          type="submit"
@@ -217,23 +228,24 @@
                 The number of analyses requested per sample type
               </span>
 
-              <div id="analysespersampletype" style="display:none" class="criteria">
+              <div id="analysespersampletype" style="display:none" class="criteria col-4">
                 <form action="createreport" method="post"
                       tal:attributes="action string:${here/absolute_url}/createreport"
                       name="productivity_analysespersampletype">
                   <input type="hidden" name="report_id"
                          value="productivity_analysespersampletype"/>
                   <fieldset>
-                    <tal:x content="structure context/@@selection_macros/select_client"/>
+                    <div tal:content="structure context/@@selection_macros/select_client" class="tomsel"/>
                     <tal:x content="structure python:view.selection_macros.select_daterange_requested(
                                     field_id='Requested',
                                     field_title='Date Requested')"/>
-                    <tal:x content="structure python:view.selection_macros.select_state_analysis(
+                    <div class="tomsel" tal:content="structure python:view.selection_macros.select_state_analysis(
                                     workflow_id='senaite_analysis_workflow',
                                     field_id='senaite_analysis_workflow',
                                     field_title='Analysis state')"/>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
                   </fieldset>
+                  <br />
                   <input tabindex=""
                          class="searchButton allowMultiSubmit"
                          type="submit"
@@ -263,23 +275,24 @@
                 The number of requests and analyses per client
               </span>
 
-              <div id="analysesperclient" style="display:none" class="criteria">
+              <div id="analysesperclient" style="display:none" class="criteria col-4">
                 <form action="createreport" method="post"
                       tal:attributes="action string:${here/absolute_url}/createreport"
                       name="productivity_analysesperclient">
                   <input type="hidden" name="report_id"
                          value="productivity_analysesperclient"/>
                   <fieldset>
-                    <tal:x content="structure context/@@selection_macros/select_client"/>
+                    <div tal:content="structure context/@@selection_macros/select_client" class="tomsel"/>
                     <tal:x content="structure python:view.selection_macros.select_daterange_requested(
                                     field_id='Requested',
                                     field_title='Date Requested')"/>
-                    <tal:x content="structure python:view.selection_macros.select_state_analysis(
+                    <div class="tomsel" tal:content="structure python:view.selection_macros.select_state_analysis(
                                     workflow_id='senaite_analysis_workflow',
                                     field_id='senaite_analysis_workflow',
                                     field_title='Analysis state')"/>
                     <tal:x content="structure context/@@selection_macros/select_output_format"/>
                   </fieldset>
+                  <br />
                   <input tabindex=""
                          class="searchButton allowMultiSubmit"
                          type="submit"
@@ -290,7 +303,61 @@
               </div>
             </li>
 
+            <!-- Analysis Results -->
+            <li>
+              <a href="#" id="analysis_results_selector"
+                 i18n:translate="">Analysis Results</a>
+              <br/>
+              <span i18n:translate="">
+                The results of an analysis over time
+              </span>
+
+              <div id="analysis_results" style="display:none" class="criteria col-4">
+                <form action="createreport" method="post"
+                      tal:attributes="action string:${here/absolute_url}/createreport"
+                      name="productivity_analysisresults">
+                  <input type="hidden" name="report_id"
+                         value="productivity_analysisresults"/>
+                  <fieldset>
+                    <div tal:content="structure context/@@selection_macros/select_client" class="update_dropdown tomsel"/>
+                    <div tal:content="structure context/@@selection_macros/select_samplepoint" class="update_dropdown tomsel"/>
+                    <div tal:content="structure context/@@selection_macros/select_sampletype" class="update_dropdown tomsel"/>
+                    <div tal:content="structure context/@@selection_macros/select_analysisspecification" class="update_dropdown tomsel"/>
+                  </fieldset>
+                  <fieldset>
+                    <div class="tomsel"
+                         tal:content="structure python:view.selection_macros.select_analysisservice(
+                                    allow_blank=False,
+                                    multiselect=False)"/>
+                    <div class="tomsel"
+                         tal:content="structure python:view.selection_macros.select_secondanalysisservice(
+                                    allow_blank=True,
+                                    multiselect=False)"/>
+                  </fieldset>
+                  <fieldset>
+                    <tal:x define="default view/last_month;
+                                   to_default view/today"
+                           content="structure python:view.selection_macros.select_daterange_received(
+                                    field_id='DateResultCapture',
+                                    default_value=default,
+                                    to_default_value=to_default,
+                                    field_title='Date Result Captured')"/>
+                  </fieldset>
+                  <div tal:content="structure context/@@selection_macros/select_output_format" hidden/>
+                  <br />
+                  <input tabindex=""
+                         class="searchButton allowMultiSubmit"
+                         type="submit"
+                         name="submit"
+                         value="Preview report"
+                         i18n:attributes="value"/>
+                  <br/>
+                </form>
+              </div>
+            </li>
+
             <!-- Analyses turnaround time -->
+            <!--
             <li>
               <a href="#" id="tats_selector"
                  i18n:translate="">Analysis turnaround time</a>
@@ -321,8 +388,10 @@
                 </form>
               </div>
             </li>
+            -->
 
             <!-- Analyses turnaround time over time -->
+            <!--
             <li tal:condition="not:here/member_is_client">
               <a href="#" id="tats_overtime_selector"
                  i18n:translate="">Analysis turnaround time over time</a>
@@ -358,8 +427,10 @@
                 </form>
               </div>
             </li>
+            -->
 
             <!-- Analyses by lab department -->
+            <!--
             <li>
               <a href="#" id="analysesperdepartment_selector"
                  i18n:translate="">Analyses summary per department</a>
@@ -397,7 +468,9 @@
               </div>
             </li>
 
+            -->
             <!-- Analyses perfomed as % of total -->
+            <!--
             <li>
               <a href="#" id="analysesperformedpertotal_selector"
                  i18n:translate="">Analyses performed and published as % of total</a>
@@ -431,8 +504,10 @@
                 </form>
               </div>
             </li>
+            -->
           </ul>
 
+          <!--
           <h2 style="font-size:1.1em;margin:15px 0px;" i18n:translate="">Other productivity
             reports</h2>
           <ul id="toc-reports">
@@ -527,6 +602,7 @@
             </li>
 
           </ul>
+          -->
         </fieldset>
       </div>
     </metal:content-core>

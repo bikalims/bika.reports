@@ -3,6 +3,7 @@ from Acquisition import aq_base
 from Products.CMFPlone.interfaces import INonInstallable
 from Products.GenericSetup.utils import _resolveDottedName
 from zope.interface import implementer
+from senaite.core.catalog import ANALYSIS_CATALOG
 from senaite.core.catalog import REPORT_CATALOG
 from senaite.core.catalog import ReportCatalog
 from senaite.core.setuphandlers import _run_import_step
@@ -11,12 +12,11 @@ from senaite.core.setuphandlers import add_catalog_column
 from senaite.core.setuphandlers import reindex_catalog_index
 from bika.lims import api
 from bika.reports.config import PROFILE_ID
+from bika.reports import PROJECTNAME
 from bika.reports import logger
 
 PORTAL_CATALOG = "portal_catalog"
-CATALOGS = (
-    ReportCatalog,
-)
+CATALOGS = (ReportCatalog,)
 
 CATALOG_MAPPINGS = (
     # portal_type, catalog_ids
@@ -30,13 +30,13 @@ class HiddenProfiles(object):
     def getNonInstallableProfiles(self):
         """Hide uninstall profile from site-creation and quickinstaller."""
         return [
-            'bika.reports:uninstall',
+            "bika.reports:uninstall",
         ]
 
 
 def post_install(context):
     """Post install script"""
-    # logger.info("{} setup handler [BEGIN]".format(PRODUCT_NAME.upper()))
+    logger.info("{} setup handler [BEGIN]".format(PROJECTNAME.upper()))
     profile_id = PROFILE_ID
     context = context._getImportContext(profile_id)
     portal = context.getSite()
@@ -50,6 +50,22 @@ def post_install(context):
     setup_core_catalogs(portal)
     setup_catalog_mappings(portal)
     # add_reports_folder(portal)
+    update_analysis_catalog(context, portal)
+
+
+def update_analysis_catalog(context, portal):
+    # update senaite_setup_catalog
+    cat = api.get_tool(ANALYSIS_CATALOG)
+    indexnames = ["getSamplePointUID", "getAnalysisSpecUID"]
+    for indexname in indexnames:
+        if indexname not in cat.indexes():
+            logger.info(
+                "{} post-install handler: add {} to {}".format(
+                    PROJECTNAME.upper(), indexname, ANALYSIS_CATALOG
+                )
+            )
+            cat.addIndex(indexname, "FieldIndex")
+            cat.manage_reindexIndex(indexname)
 
 
 def uninstall(context):
@@ -58,8 +74,7 @@ def uninstall(context):
 
 
 def setup_core_catalogs(portal, catalog_classes=None, reindex=True):
-    """Setup core catalogs
-    """
+    """Setup core catalogs"""
     logger.info("*** Setup core catalogs ***")
     at = api.get_tool("archetype_tool")
 
@@ -108,8 +123,9 @@ def setup_core_catalogs(portal, catalog_classes=None, reindex=True):
                 existing = list(map(lambda c: c.getId(), catalogs))
                 new_catalogs = existing + [catalog_id]
                 at.setCatalogsByType(portal_type, new_catalogs)
-                logger.info("*** Mapped catalog '%s' for type '%s'"
-                            % (catalog_id, portal_type))
+                logger.info(
+                    "*** Mapped catalog '%s' for type '%s'" % (catalog_id, portal_type)
+                )
 
     # reindex new indexes
     for catalog, idx_id in to_reindex:
@@ -117,8 +133,7 @@ def setup_core_catalogs(portal, catalog_classes=None, reindex=True):
 
 
 def setup_catalog_mappings(portal, catalog_mappings=None):
-    """Setup portal_type -> catalog mappings
-    """
+    """Setup portal_type -> catalog mappings"""
     logger.info("*** Setup Catalog Mappings ***")
 
     # allow add-ons to use this handler with own mappings
@@ -129,9 +144,9 @@ def setup_catalog_mappings(portal, catalog_mappings=None):
     for portal_type, catalogs in catalog_mappings:
         at.setCatalogsByType(portal_type, catalogs)
 
+
 def add_reports_folder(portal):
-    """Adds the initial Patient folder
-    """
+    """Adds the initial Patient folder"""
     if portal.get("reports") is None:
         logger.info("Adding Reports Folder")
         portal.invokeFactory("ReportFolder", "reports", title="Reports")

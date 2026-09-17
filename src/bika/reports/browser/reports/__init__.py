@@ -18,8 +18,11 @@
 # Copyright 2018-2021 by it's authors.
 # Some rights reserved, see README and LICENSE.
 
+import bs4
+import collections
 import importlib
 import os
+import urllib
 
 from DateTime import DateTime
 from Products.CMFCore.utils import getToolByName
@@ -31,14 +34,15 @@ from zope.interface import implements
 
 from bika.lims import api
 from bika.lims.browser import BrowserView
-from bika.lims.browser.bika_listing import BikaListingView
-from bika.lims.utils import createPdf
 from bika.lims.utils import getUsers
 from bika.lims.utils import logged_in_client
+from bika.lims.utils import createPdf
+
 from bika.reports import _
 from bika.reports.browser.reports.selection_macros import SelectionMacrosView
 from bika.reports.interfaces import IAdministrationReport
 from bika.reports.interfaces import IProductivityReport
+from senaite.app.listing import ListingView
 from senaite.core.catalog import REPORT_CATALOG
 
 
@@ -57,6 +61,9 @@ class ProductivityView(BrowserView):
         self.selection_macros = SelectionMacrosView(self.context, self.request)
         self.icon = self.portal_url + "/++resource++bika.lims.images/report_big.png"
         self.getAnalysts = getUsers(self.context, ["Manager", "LabManager", "Analyst"])
+        self.last_month = DateTime() - 30
+        self.last_month = self.last_month.strftime("%Y-%m-%d")
+        self.today = DateTime().strftime("%Y-%m-%d")
 
         self.additional_reports = []
         adapters = getAdapters((self.context,), IProductivityReport)
@@ -93,23 +100,16 @@ class AdministrationView(BrowserView):
         return self.template()
 
 
-class ReportHistoryView(BikaListingView):
+class ReportHistoryView(ListingView):
     """Report history form"""
-
-    implements(IViewView)
 
     def __init__(self, context, request):
         super(ReportHistoryView, self).__init__(context, request)
 
         self.catalog = REPORT_CATALOG
-
-        self.context_actions = {}
-
-        self.show_select_row = False
-        self.show_select_column = False
-        self.show_column_toggles = False
-        self.show_workflow_action_buttons = False
-        self.show_select_all_checkbox = False
+        self.contentFilter = {"portal_type": "Report", "sort_order": "reverse"}
+        self.show_select_row = True
+        self.show_select_column = True
         self.pagesize = 50
 
         self.icon = self.portal_url + "/++resource++bika.lims.images/report_big.png"
@@ -117,54 +117,55 @@ class ReportHistoryView(BikaListingView):
         self.description = ""
 
         # this is set up in call where member is authenticated
-        self.columns = {}
-        self.review_states = []
-
-    def __call__(self):
-        self.columns = {
-            "Title": {
+        self.columns = collections.OrderedDict((
+            ("Title", {
                 "title": _("Title"),
                 "attr": "Title",
-                "index": "title",
-            },
-            "file_size": {
+                "index": "title"}),
+            ("file_size", {
                 "title": _("Size"),
                 "attr": "getFileSize",
-                "sortable": False,
-            },
-            "created": {
+                "sortable": False}),
+            ("created", {
                 "title": _("Created"),
                 "attr": "created",
-                "index": "created",
-            },
-            "creator": {
+                "index": "created"}),
+            ("creator", {
                 "title": _("By"),
                 "attr": "getCreatorFullName",
-                "index": "Creator",
-            },
-        }
+                "index": "Creator"}),
+        ))
+
         self.review_states = [
             {
                 "id": "default",
-                "title": "All",
+                "title": _("Active"),
+                "contentFilter": {"is_active": True},
+                "columns": self.columns.keys(),
+            }, {
+                "id": "inactive",
+                "title": _("Inactive"),
+                "contentFilter": {"is_active": False},
+                "columns": self.columns.keys(),
+            }, {
+                "id": "all",
+                "title": _("All"),
                 "contentFilter": {},
-                "columns": ["Title", "file_size", "created", "creator"],
+                "columns": self.columns.keys(),
             },
         ]
-
-        self.contentFilter = {"portal_type": "Report", "sort_order": "reverse"}
 
         this_client = logged_in_client(self.context)
         if this_client:
             self.contentFilter["getClientUID"] = this_client.UID()
         else:
-            self.columns["client"] = {
-                "title": _("Client"),
-                "attr": "getClientTitle",
-                "replace_url": "getClientURL",
-            }
+            pass
+            # client_col = [("Client", {"title": _("Client"),
+            #                           "attr": "getClientURL"})]
+            # self.columns.update(client_col)
+            # for i in range(len(self.review_states)):
+            #     self.review_states[i]["columns"].append("Client")
 
-        return super(ReportHistoryView, self).__call__()
 
     def lookupMime(self, name):
         mimetool = getToolByName(self, "mimetypes_registry")
@@ -175,7 +176,6 @@ class ReportHistoryView(BikaListingView):
             return name
 
     def folderitem(self, obj, item, index):
-        item = BikaListingView.folderitem(self, obj, item, index)
         # https://github.com/collective/uwosh.pfg.d2c/issues/20
         # https://github.com/collective/uwosh.pfg.d2c/pull/21
         item["replace"]["Title"] = "<a href='%s/ReportFile'>%s</a>" % (
@@ -202,6 +202,12 @@ class SubmitForm(BrowserView):
     def __call__(self):
         """Create and render selected report"""
 
+        if "Cancel" in self.request.form:
+            came_from = self.request.form.get("came_from", self.context.absolute_url())
+            # Do your form processing
+            self.request.response.redirect(came_from)
+            return
+
         # if there's an error, we return productivity.pt which requires these.
         self.selection_macros = SelectionMacrosView(self.context, self.request)
         self.additional_reports = []
@@ -211,8 +217,8 @@ class SubmitForm(BrowserView):
             report_dict["id"] = name
             self.additional_reports.append(report_dict)
 
-        report_id = self.request.get("report_id", "")
-        if not report_id:
+        self.report_id = self.request.get("report_id", "")
+        if not self.report_id:
             message = _("No report specified in request")
             self.logger.error(message)
             self.context.plone_utils.addPortalMessage(message, "error")
@@ -261,7 +267,7 @@ class SubmitForm(BrowserView):
         if "report_module" in self.request:
             module = self.request["report_module"]
         else:
-            module = "bika.reports.browser.reports.%s" % report_id
+            module = "bika.reports.browser.reports.%s" % self.report_id
         try:
             Report = getattr(importlib.import_module(module), "Report")
             # required during error redirect: the report must have a copy of
@@ -290,10 +296,30 @@ class SubmitForm(BrowserView):
 
         # The report output gets pulled through report_frame.pt
         self.reportout = output["report_data"]
+        self.report_parms = ""
+        self.plot_data = ""
+        if output.get("report_parms"):
+            self.report_parms = urllib.urlencode(output["report_parms"])
+            self.report_parms += "&output_format=PDF"
+            self.plot_data = output["plot_data"]
         framed_output = self.frame_template()
 
-        # this is the good part
-        pdf = createPdf(framed_output)
+        self.logger.info("SubmitForm: Create framed_output")
+        # self.logger.info("SubmitForm: report_parms: {}".format(self.report_parms))
+        # self.logger.info("SubmitForm: framed_output: {}".format(framed_output))
+
+        # NB: The output_format can be hidden on the form with no value!
+        if len(self.request.get("output_format", "")) == 0:
+            self.logger.info("SubmitForm: exit with framed_output")
+            return framed_output
+
+        # pdf = createPdf(framed_output)
+        parser = bs4.BeautifulSoup(framed_output, "html.parser")
+        for el in parser.find_all("form"):
+            el.decompose()
+        for el in parser.find_all("script", class_="svg-plot"):
+            el.decompose()
+        pdf = createPdf(parser.prettify())
 
         # remove temporary files
         for f in self.request["to_remove"]:
@@ -316,4 +342,5 @@ class SubmitForm(BrowserView):
         setheader("Content-Length", len(pdf))
         setheader("Cache-Control", "no-store")
         setheader("Pragma", "no-cache")
+        self.logger.info("Add PDF to response")
         self.request.response.write(pdf)
