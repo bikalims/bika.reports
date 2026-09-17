@@ -241,7 +241,7 @@ class SubmitForm(BrowserView):
             if sf:
                 self.reporter_signature = sf.absolute_url() + "/Signature"
 
-        lab = api.get_setup().laboratory
+        lab = api.get_senaite_setup().laboratory
         self.laboratory = lab
         self.lab_title = lab.getName()
         self.lab_address = lab.getPrintAddress()
