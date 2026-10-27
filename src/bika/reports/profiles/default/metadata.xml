@@ -2,6 +2,6 @@
 <metadata>
   <version>1.0.1</version>
   <dependencies>
-    <dependency>profile-Products.ATContentTypes:base</dependency>
+    <dependency>profile-senaite.core:default</dependency>
   </dependencies>
 </metadata>
